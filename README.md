@@ -13,6 +13,8 @@ Zabbix Notifications with graphs in Telegram
   * create readonly user in Zabbix
   * set proxy host:port in curl exec
  * add new media for Telegram in Zabbix web interface
+ * send something to your bot, e.g. "/start"
+  * if you are in group chat, just mention it
  * create new action like this:
 
 ![](http://i.imgur.com/ZNKtBUX.png =300x)
