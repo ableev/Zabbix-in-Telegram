@@ -11,14 +11,14 @@ TMP_UIDS="${TMP_DIR}/uids.txt"
 
 login() {
     # grab cookie for downloading image
-    curl --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}
+    ${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}
 }
 
 get_image() {
     URL=$1
     IMG_NAME=$2
     # downloads png graph and saves it to temporary path
-    curl -s --cookie ${TMP_COOKIE} --globoff "${URL}" -o ${IMG_NAME}
+    ${CURL} -s --cookie ${TMP_COOKIE} --globoff "${URL}" -o ${IMG_NAME}
 }
 
 TO=$1
