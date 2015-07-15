@@ -7,15 +7,16 @@ Zabbix Notifications with graphs in Telegram
 - [x] saves chatid as a temporary file
 
 ### Configuration
- * place zbxtg.sh to AlertScriptsPath directory
- * create tg_vars.cfg with your settings and save them
+ * place `zbxtg.sh` to `AlertScriptsPath` directory
+ * create `tg_vars.cfg` with your settings and save them
   * create bot in Telegram and get API key
   * create readonly user in Zabbix
   * set proxy host:port in curl exec
  * add new media for Telegram in Zabbix web interface
  * create new action like this:
 
-![](http://i.imgur.com/ZNKtBUX.png =500x)
+![](http://i.imgur.com/ZNKtBUX.png =300x)
+#### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
 zbxth;chat -- enables sending to group chats (default - set to 1-1 private chat)
