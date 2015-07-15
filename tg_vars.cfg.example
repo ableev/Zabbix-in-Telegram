@@ -1,0 +1,10 @@
+TG_KEY="000:AAAAA_bbbb"
+
+ZBX_TG_PREFIX="zbxtg" # variable for separating text from script info
+
+ZBX_SERVER="http://zabbix.local" # zabbix server url
+ZBX_API_USER="api" # zabbix user; user must have at least read access to get graphs
+ZBX_API_PASS="apisecret"
+
+CURL="curl -s" # if you are using proxy server, it's time to add it right here
+# CURL="curl -x proxy.local:3128 -s"
