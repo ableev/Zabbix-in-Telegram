@@ -17,7 +17,7 @@ Zabbix Notifications with graphs in Telegram
   * if you are in group chat, just mention it
  * create new action like this:
 
-![](http://i.imgur.com/ZNKtBUX.png =300x)
+<img scr="http://i.imgur.com/ZNKtBUX.png" width="300">
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
@@ -31,3 +31,14 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
 
 ![](http://i.imgur.com/1T4aHuf.png)
 ![](http://i.imgur.com/5ZPyvoe.png)
+
+### Known issues
+
+#### grep
+If your zabbix running on FreeBSD, script might not be working due to version of `grep`.
+Script uses `--perl-regexp` option from [GNU grep](http://git.sv.gnu.org/cgit/grep.git):
+```
+       -P, --perl-regexp
+              Interpret PATTERN as a Perl regular expression.  This is highly experimental and grep -P may warn of unimplemented features.
+```
+`BSD grep` in FreeBSD or Mac OS doesn't support that option.
