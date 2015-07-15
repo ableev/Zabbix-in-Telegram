@@ -1,13 +1,17 @@
 # Zabbix-in-Telegram
 Zabbix Notifications with graphs in Telegram
 
-Features:
+### Features
 - [x] graphs based on latest data are sent directly to your messenger
 - [x] you can send them both in private and group chats
 - [x] saves chatid as a temporary file
 
-Settings:
+### Configuration
  * place zbxtg.sh to AlertScriptsPath directory
+ * create tg_vars.cfg with your settings and save them
+  * create bot in Telegram and get API key
+  * create readonly user in Zabbix
+  * set proxy host:port in curl exec
  * add new media for Telegram in Zabbix web interface
  * create new action like this:
 
