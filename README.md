@@ -17,7 +17,7 @@ Zabbix Notifications with graphs in Telegram
   * if you are in group chat, just mention it
  * create new action like this:
 
-<img scr="http://i.imgur.com/ZNKtBUX.png" width="300">
+<img src="http://i.imgur.com/ZNKtBUX.png" width="300px">
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
