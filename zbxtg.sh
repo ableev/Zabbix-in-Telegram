@@ -11,7 +11,7 @@ TMP_UIDS="${TMP_DIR}/uids.txt"
 
 login() {
     # grab cookie for downloading image
-    ${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}
+    ${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}/
 }
 
 get_image() {
