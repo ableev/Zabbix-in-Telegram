@@ -34,11 +34,4 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
 
 ### Known issues
 
-#### grep
-If your zabbix running on FreeBSD, script might not be working due to version of `grep`.
-Script uses `--perl-regexp` option from [GNU grep](http://git.sv.gnu.org/cgit/grep.git):
-```
-       -P, --perl-regexp
-              Interpret PATTERN as a Perl regular expression.  This is highly experimental and grep -P may warn of unimplemented features.
-```
-`BSD grep` in FreeBSD or Mac OS doesn't support that option.
+-
