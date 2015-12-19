@@ -52,9 +52,9 @@ ${TG_TEXT}" 2>/dev/null
 
     "image")
         PERIOD=3600 # default period
-        echo "${BODY}" | grep -q "^${ZBX_TG_PREFIX};graphs_period" && PERIOD=$(echo "${BODY}" | awk -F 'zbxtg;graphs_period=' '{if ($2 != "") print $2}' | tail -1 | grep -Eo '[0-9]+' || echo 3600)
-        ZBX_ITEMID=$(echo "${BODY}" | awk -F 'zbxtg;itemid:' '{if ($2 != "") print $2}' | tail -1 | grep -Eo '[0-9]+')
-        ZBX_TITLE=$(echo "${BODY}" | awk -F 'zbxtg;title:' '{if ($2 != "") print $2}' | tail -1)
+        echo "${BODY}" | grep -q "^${ZBX_TG_PREFIX};graphs_period" && PERIOD=$(echo "${BODY}" | awk -F '=' /graphs_period/'{print $NF}')  || PERIOD=3600
+        ZBX_ITEMID=$(echo "${BODY}" | awk -F ':' /itemid/'{print $NF}')
+        ZBX_TITLE=$(echo "${BODY}" | awk -F ':' /title/'{print $NF}')
         URL="${ZBX_SERVER}/chart3.php?period=${PERIOD}&name=${ZBX_TITLE}&width=900&height=200&graphtype=0&legend=1&items[0][itemid]=${ZBX_ITEMID}&items[0][sortorder]=0&items[0][drawtype]=5&items[0][color]=00CC00"
         login
         CACHE_IMAGE="${TMP_DIR}/graph.${ZBX_ITEMID}.png"
