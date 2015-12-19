@@ -38,7 +38,7 @@ then
     TG_UPDATES=$(${CURL_TG}/getUpdates)
     TG_CHAT_ID=$(echo "${TG_UPDATES}" | awk -F ',' END'{print $6}' | sed 's/"chat":{"id"://g;/^$/d'
     
-    echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >> ${TMP_UIDS}
+    echo "${TO};${TG_CHAT_ID}" >> ${TMP_UIDS}
 fi
 
 TG_TEXT=$(echo "${BODY}" | grep -vE "^${ZBX_TG_PREFIX};"; echo "--")
