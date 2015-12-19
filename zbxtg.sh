@@ -31,24 +31,13 @@ METHOD="txt" # sendMessage (simple text) or sendPhoto (attached image)
 echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};graphs" && METHOD="image"
 echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};chat" && TG_CHAT=1
 
-if [ "${TG_CHAT}" -eq 1 ]
-then
-    TG_CONTACT_TYPE="chat"
-else
-    TG_CONTACT_TYPE="user"
-fi
-
-TG_CHAT_ID=$(cat ${TMP_UIDS} | awk -F ';' '{if ($1 == "'${TO}'" && $2 == "'${TG_CONTACT_TYPE}'") print $3}' | tail -1)
+TG_CHAT_ID=$(cat ${TMP_UIDS} | awk -F ';' END'{ print $NF}')
 
 if [ -z "${TG_CHAT_ID}" ]
 then
     TG_UPDATES=$(${CURL_TG}/getUpdates)
-    if [ "${TG_CHAT}" -eq 1 ]
-    then
-        TG_CHAT_ID=$(echo "${TG_UPDATES}" | sed -e 's/["}{]//g' | awk -F ',' '{if ($8 == "type:group" && $7 == "title:'${TO}'") {gsub("chat:id:", "", $6); print $6}}' | tail -1)
-    else
-        TG_CHAT_ID=$(echo "${TG_UPDATES}" | sed -e 's/["}{]//g' | awk -F ',' '{if ($10 == "type:private" && $5 == "username:'${TO}'") {gsub("chat:id:", "", $6); print $6}}' | tail -1)
-    fi
+    TG_CHAT_ID=$(echo "${TG_UPDATES}" | awk -F ',' END'{print $6}' | sed 's/"chat":{"id"://g;/^$/d'
+    
     echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >> ${TMP_UIDS}
 fi
 
