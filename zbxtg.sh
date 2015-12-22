@@ -51,7 +51,7 @@ ${TG_TEXT}" 2>/dev/null
     ;;
 
     "image")
-        echo "${BODY}" | grep -q "^${ZBX_TG_PREFIX};graphs_period" && PERIOD=$(echo "${BODY}" | awk -F '=' /graphs_period/'{print $NF}')  || PERIOD=3600
+        PERIOD=$(echo "${BODY}" | awk -F '=' /graphs_period/'{print $NF}') && [ -z $PERIOD ] && PERIOD=3600
         ZBX_ITEMID=$(echo "${BODY}" | awk -F ':' /itemid/'{print $NF}')
         ZBX_TITLE=$(echo "${BODY}" | awk -F ':' /title/'{print $NF}')
         URL="${ZBX_SERVER}/chart3.php?period=${PERIOD}&name=${ZBX_TITLE}&width=900&height=200&graphtype=0&legend=1&items[0][itemid]=${ZBX_ITEMID}&items[0][sortorder]=0&items[0][drawtype]=5&items[0][color]=00CC00"
