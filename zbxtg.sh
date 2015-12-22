@@ -51,7 +51,6 @@ ${TG_TEXT}" 2>/dev/null
     ;;
 
     "image")
-        PERIOD=3600 # default period
         echo "${BODY}" | grep -q "^${ZBX_TG_PREFIX};graphs_period" && PERIOD=$(echo "${BODY}" | awk -F '=' /graphs_period/'{print $NF}')  || PERIOD=3600
         ZBX_ITEMID=$(echo "${BODY}" | awk -F ':' /itemid/'{print $NF}')
         ZBX_TITLE=$(echo "${BODY}" | awk -F ':' /title/'{print $NF}')
