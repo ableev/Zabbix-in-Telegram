@@ -1,6 +1,8 @@
 # Zabbix-in-Telegram
 Zabbix Notifications with graphs in Telegram
 
+Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
+
 ### Features
 - [x] graphs based on latest data are sent directly to your messenger
 - [x] you can send them both in private and group chats
@@ -25,6 +27,7 @@ zbxth;chat -- enables sending to group chats (default - set to 1-1 private chat)
 zbxtg;graphs_period=10800 -- set graphs period (default - 3600 seconds)
 zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
+zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir
 ```
 
 ---
@@ -33,5 +36,9 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
 ![](http://i.imgur.com/5ZPyvoe.png)
 
 ### Known issues
+
+#### MEDIA_CAPTION_TOO_LONG
+If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
+Such captions will be automatically cut to 200 symbols.
 
 -
