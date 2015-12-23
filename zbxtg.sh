@@ -9,6 +9,19 @@ TMP_DIR="/tmp/${ZBX_TG_PREFIX}"
 TMP_COOKIE="${TMP_DIR}/cookie.txt"
 TMP_UIDS="${TMP_DIR}/uids.txt"
 
+TS="`date +%s_%N`_$RANDOM"
+LOG="/dev/null"
+
+IS_DEBUG () {
+    if [ "${ISDEBUG}" == "TRUE" ]
+    then
+        return 0
+    else
+        return 1
+    fi
+}
+
+
 login() {
     # grab cookie for downloading image
     ${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}/
@@ -18,7 +31,7 @@ get_image() {
     URL=$1
     IMG_NAME=$2
     # downloads png graph and saves it to temporary path
-    ${CURL} -s --cookie ${TMP_COOKIE} --globoff "${URL}" -o ${IMG_NAME}
+    ${CURL} --cookie ${TMP_COOKIE} --globoff "${URL}" -o ${IMG_NAME}
 }
 
 TO=$1
@@ -30,6 +43,9 @@ METHOD="txt" # sendMessage (simple text) or sendPhoto (attached image)
 
 echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};graphs" && METHOD="image"
 echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};chat" && TG_CHAT=1
+echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};debug" && ISDEBUG="TRUE"
+
+IS_DEBUG && LOG="${TMP_DIR}/debug.${TS}.log"
 
 if [ "${TG_CHAT}" -eq 1 ]
 then
@@ -52,13 +68,15 @@ then
     echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >> ${TMP_UIDS}
 fi
 
+IS_DEBUG && echo "TG_CHAT_ID: ${TG_CHAT_ID}" > ${LOG}
+
 TG_TEXT=$(echo "${BODY}" | grep -vE "^${ZBX_TG_PREFIX};"; echo "--"; echo "${ZBX_SERVER}")
 
 case "${METHOD}" in
 
     "txt")
         ${CURL_TG}/sendMessage -F "chat_id=${TG_CHAT_ID}" -F "text=${SUBJECT}
-${TG_TEXT}" 2>/dev/null
+${TG_TEXT}" >>${LOG} 2>&1
     ;;
 
     "image")
@@ -67,12 +85,14 @@ ${TG_TEXT}" 2>/dev/null
         ZBX_ITEMID=$(echo "${BODY}" | awk -F 'zbxtg;itemid:' '{if ($2 != "") print $2}' | tail -1 | grep -Eo '[0-9]+')
         ZBX_TITLE=$(echo "${BODY}" | awk -F 'zbxtg;title:' '{if ($2 != "") print $2}' | tail -1)
         URL="${ZBX_SERVER}/chart3.php?period=${PERIOD}&name=${ZBX_TITLE}&width=900&height=200&graphtype=0&legend=1&items[0][itemid]=${ZBX_ITEMID}&items[0][sortorder]=0&items[0][drawtype]=5&items[0][color]=00CC00"
+        IS_DEBUG && echo "Zabbix graph URL: ${URL}" >> ${LOG}
         login
         CACHE_IMAGE="${TMP_DIR}/graph.${ZBX_ITEMID}.png"
+        IS_DEBUG && echo "Cache image saved to ${CACHE_IMAGE} and wasn't deleted" >> ${LOG}
         get_image "${URL}" ${CACHE_IMAGE}
         ${CURL_TG}/sendPhoto -F "chat_id=${TG_CHAT_ID}" -F "caption=${SUBJECT}
-${TG_TEXT}" -F "photo=@${CACHE_IMAGE}" 2>/dev/null
-        rm ${CACHE_IMAGE}
+${TG_TEXT}" -F "photo=@${CACHE_IMAGE}" >>${LOG} 2>&1
+        IS_DEBUG || rm ${CACHE_IMAGE}
     ;;
 
 esac
