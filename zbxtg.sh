@@ -88,10 +88,15 @@ ${TG_TEXT}" >>${LOG} 2>&1
         IS_DEBUG && echo "Zabbix graph URL: ${URL}" >> ${LOG}
         login
         CACHE_IMAGE="${TMP_DIR}/graph.${ZBX_ITEMID}.png"
-        IS_DEBUG && echo "Cache image saved to ${CACHE_IMAGE} and wasn't deleted" >> ${LOG}
+        IS_DEBUG && echo "Image cached to ${CACHE_IMAGE} and wasn't deleted" >> ${LOG}
         get_image "${URL}" ${CACHE_IMAGE}
-        ${CURL_TG}/sendPhoto -F "chat_id=${TG_CHAT_ID}" -F "caption=${SUBJECT}
-${TG_TEXT}" -F "photo=@${CACHE_IMAGE}" >>${LOG} 2>&1
+        TG_CAPTION_ORIG=$(echo -e "${SUBJECT}\n${TG_TEXT}")
+        TG_CAPTION=$(echo -e $(echo "${TG_CAPTION_ORIG}" | sed ':a;N;$!ba;s/\n/\\n/g' | awk '{print substr( $0, 0, 200 )}'))
+        if [ "${TG_CAPTION}" != "${TG_CAPTION_ORIG}" ]
+        then
+            echo "${ZBX_TG_PREFIX}: probably you will see MEDIA_CAPTION_TOO_LONG error, the message has been cut to 200 symbols, https://github.com/ableev/Zabbix-in-Telegram/issues/9#issuecomment-166895044"
+        fi
+        ${CURL_TG}/sendPhoto -F "chat_id=${TG_CHAT_ID}" -F "caption=${TG_CAPTION}" -F "photo=@${CACHE_IMAGE}" >>${LOG} 2>&1
         IS_DEBUG || rm ${CACHE_IMAGE}
     ;;
 
