@@ -52,7 +52,7 @@ then
     echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >> ${TMP_UIDS}
 fi
 
-TG_TEXT=$(echo "${BODY}" | grep -vE "^${ZBX_TG_PREFIX};"; echo "--")
+TG_TEXT=$(echo "${BODY}" | grep -vE "^${ZBX_TG_PREFIX};"; echo "--"; echo "${ZBX_SERVER}")
 
 case "${METHOD}" in
 
