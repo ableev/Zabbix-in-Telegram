@@ -24,6 +24,7 @@ IS_DEBUG () {
 
 login() {
     # grab cookie for downloading image
+    IS_DEBUG && echo "${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data \"name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in\" ${ZBX_SERVER}/" >>${LOG}
     ${CURL} --cookie-jar ${TMP_COOKIE} --request POST --data "name=${ZBX_API_USER}&password=${ZBX_API_PASS}&enter=Sign%20in" ${ZBX_SERVER}/
 }
 
@@ -31,6 +32,7 @@ get_image() {
     URL=$1
     IMG_NAME=$2
     # downloads png graph and saves it to temporary path
+    IS_DEBUG && echo "${CURL} --cookie ${TMP_COOKIE} --globoff \"${URL}\" -o ${IMG_NAME}" >>${LOG}
     ${CURL} --cookie ${TMP_COOKIE} --globoff "${URL}" -o ${IMG_NAME}
 }
 
@@ -46,6 +48,7 @@ echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};chat" && TG_CHAT=1
 echo "${BODY}" | grep -q "${ZBX_TG_PREFIX};debug" && ISDEBUG="TRUE"
 
 IS_DEBUG && LOG="${TMP_DIR}/debug.${TS}.log"
+IS_DEBUG && echo -e "TMP_DIR=${TMP_DIR}\nTMP_COOKIE=${TMP_COOKIE}\nTMP_UIDS=${TMP_UIDS}" >>${LOG}
 
 if [ "${TG_CHAT}" -eq 1 ]
 then
@@ -65,18 +68,19 @@ then
     else
         TG_CHAT_ID=$(echo "${TG_UPDATES}" | sed -e 's/["}{]//g' | awk -F ',' '{if ($10 == "type:private" && $5 == "username:'${TO}'") {gsub("chat:id:", "", $6); print $6}}' | tail -1)
     fi
-    echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >> ${TMP_UIDS}
+    echo "${TO};${TG_CONTACT_TYPE};${TG_CHAT_ID}" >>${TMP_UIDS}
 fi
 
-IS_DEBUG && echo "TG_CHAT_ID: ${TG_CHAT_ID}" > ${LOG}
+IS_DEBUG && echo "TG_CHAT_ID: ${TG_CHAT_ID}" >>${LOG}
 
 TG_TEXT=$(echo "${BODY}" | grep -vE "^${ZBX_TG_PREFIX};"; echo "--"; echo "${ZBX_SERVER}")
 
 case "${METHOD}" in
 
     "txt")
-        ${CURL_TG}/sendMessage -F "chat_id=${TG_CHAT_ID}" -F "text=${SUBJECT}
-${TG_TEXT}" >>${LOG} 2>&1
+        TG_MESSAGE=$(echo -e "${SUBJECT}\n${TG_TEXT}")
+        IS_DEBUG && echo "${CURL_TG}/sendMessage -F \"chat_id=${TG_CHAT_ID}\" -F \"text=${TG_MESSAGE}\"" >>${LOG}
+        ${CURL_TG}/sendMessage -F "chat_id=${TG_CHAT_ID}" -F "text=${TG_MESSAGE}" >>${LOG} 2>&1
     ;;
 
     "image")
@@ -96,8 +100,11 @@ ${TG_TEXT}" >>${LOG} 2>&1
         then
             echo "${ZBX_TG_PREFIX}: probably you will see MEDIA_CAPTION_TOO_LONG error, the message has been cut to 200 symbols, https://github.com/ableev/Zabbix-in-Telegram/issues/9#issuecomment-166895044"
         fi
+        IS_DEBUG && echo "${CURL_TG}/sendPhoto -F \"chat_id=${TG_CHAT_ID}\" -F \"caption=${TG_CAPTION}\" -F \"photo=@${CACHE_IMAGE}\"" >>${LOG}
         ${CURL_TG}/sendPhoto -F "chat_id=${TG_CHAT_ID}" -F "caption=${TG_CAPTION}" -F "photo=@${CACHE_IMAGE}" >>${LOG} 2>&1
         IS_DEBUG || rm ${CACHE_IMAGE}
     ;;
 
 esac
+
+echo >>${LOG}
