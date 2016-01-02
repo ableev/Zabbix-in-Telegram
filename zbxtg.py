@@ -44,7 +44,6 @@ def tg_send_photo(proxies, key, to, message, path):
     tg_url_bot_general = "https://api.telegram.org/bot"
     url = tg_url_bot_general + key + "/sendPhoto"
     file = path.split("/")[-1]
-    print file, path
     message = "\n".join(message)
     params = {"chat_id": to, "caption": message}
     files = {"photo": open(path, 'rb')}
@@ -70,7 +69,6 @@ def zbx_image_get(proxies, api_server, api_user, api_pass, itemid, period, title
         print(zbxtg_settings.zbx_tg_prefix + " authorization has failed")
         sys.exit(1)
     res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies)
-    print cookie._cookies
     res_img = res._content
     with open(file, 'wb') as fp:
         fp.write(res_img)
@@ -202,7 +200,9 @@ def main():
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(zbxtg_itemid)
         zbx_image = zbx_image_get(proxies_zbx, zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
                                   zbxtg_itemid, zbxtg_image_period, zbxtg_title, zbxtg_path_cache_img)
-        tg_send_photo(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text, zbxtg_path_cache_img)
+        if tg_send_photo(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text, zbxtg_path_cache_img):
+            os.remove(zbxtg_path_cache_img)
+
 
 if __name__ == "__main__":
     main()
