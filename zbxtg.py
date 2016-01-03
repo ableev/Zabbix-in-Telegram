@@ -175,7 +175,7 @@ def main():
             print("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(zbx_to))
         sys.exit(1)
 
-    zbxtg_body = zbx_body.splitlines()
+    zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
     for l in zbxtg_body:
