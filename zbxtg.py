@@ -29,7 +29,7 @@ def tg_send_message(proxies, key, to, message):
     tg_url_bot_general = "https://api.telegram.org/bot"
     url = tg_url_bot_general + key + "/sendMessage"
     message = "\n".join(message)
-    params = {"chat_id": to, "text": message}
+    params = {"chat_id": to, "text": message, "parse_mode": "Markdown"}
     res = requests.post(url, params=params, proxies=proxies)
     answer = res._content
     answer_json = json.loads(answer)
