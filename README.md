@@ -9,6 +9,9 @@ Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyj
 - [x] saves chatid as a temporary file
 
 ### Configuration
+
+**First of all**: you need to install `requests` module for python: `pip install requests`
+
  * place `zbxtg.py` to `AlertScriptsPath` directory
  * create `zbxtg_settings.py` with your settings and save them
   * create bot in Telegram and get API key
