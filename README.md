@@ -9,14 +9,14 @@ Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyj
 - [x] saves chatid as a temporary file
 
 ### Configuration
- * place `zbxtg.sh` to `AlertScriptsPath` directory
- * create `tg_vars.cfg` with your settings and save them
+ * place `zbxtg.py` to `AlertScriptsPath` directory
+ * create `zbxtg_settings.py` with your settings and save them
   * create bot in Telegram and get API key
   * create readonly user in Zabbix
-  * set proxy host:port in curl exec
+  * set proxy host:port in `zbxtg_settings.py` if you need
  * add new media for Telegram in Zabbix web interface
  * send something to your bot, e.g. "/start"
-  * if you are in group chat, just mention it
+  * if you are in group chat, just mention it, e.g. `@ZbxTgDevBot ping`
  * create new action like this:
 
 <img src="http://i.imgur.com/ZNKtBUX.png" width="300px">
@@ -29,6 +29,8 @@ zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
 zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir
 ```
+
+You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown
 
 ---
 
