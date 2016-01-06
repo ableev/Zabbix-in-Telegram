@@ -99,6 +99,8 @@ def main():
     zbx_subject = sys.argv[2]
     zbx_body = sys.argv[3]
 
+    zbx_to = zbx_to.replace("@", "")
+
     tg_chat = False  # send message to chat or in private
     tg_contact_type = "private"
     tg_contact_type_old = "user"
