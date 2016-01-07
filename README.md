@@ -4,13 +4,14 @@ Zabbix Notifications with graphs in Telegram
 Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
 
 ### Features
-- [x] graphs based on latest data are sent directly to your messenger
-- [x] you can send them both in private and group chats
-- [x] saves chatid as a temporary file
+- [x] Graphs based on latest data are sent directly to your messenger
+- [x] You can send them both in private and group chats
+- [x] Saves chatid as a temporary file
 
-### Configuration
+### Configuration / Installation
 
-**First of all**: you need to install `requests` module for python: `pip install requests`
+**First of all**: You need to install the `requests` module for python, this is required for operation! </br>
+                  To do so, enter `pip install requests` in your commandline!
 
  * Place `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your zabbix_server.conf
  * Create `zbxtg_settings.py` with your settings and save them in the same directory as the script, see example for layout
@@ -37,6 +38,14 @@ zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp 
 ```
 
 You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown
+
+#### Debug
+
+* You can use the following command to send a message from your command line: </br>
+`./zbxtg.py "<user name>" "<message>" "<message>"`
+* For `<username>` substitute your Telegram username, NOT that of your bot (case-sensitive)
+* For `<message>` just substitute something like "test"
+* You can omit the `"`, these are optional
 
 ---
 
