@@ -157,11 +157,13 @@ def main():
         for m in tg_updates["result"]:
             chat = m["message"]["chat"]
             if chat["type"] == tg_contact_type == "private":
-                if chat["username"] == zbx_to:
-                    uid = chat["id"]
+                if "username" in chat:
+                    if chat["username"] == zbx_to:
+                        uid = chat["id"]
             if chat["type"] == tg_contact_type == "group":
-                if chat["title"] == zbx_to:
-                    uid = chat["id"]
+                if "title" in chat:
+                    if chat["title"] == zbx_to:
+                        uid = chat["id"]
         if uid:
             tmp_update = True
 
