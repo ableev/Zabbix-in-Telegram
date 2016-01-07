@@ -12,15 +12,18 @@ Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyj
 
 **First of all**: you need to install `requests` module for python: `pip install requests`
 
- * place `zbxtg.py` to `AlertScriptsPath` directory
- * create `zbxtg_settings.py` with your settings and save them
-  * create bot in Telegram and get API key
-  * create readonly user in Zabbix
-  * set proxy host:port in `zbxtg_settings.py` if you need
- * add new media for Telegram in Zabbix web interface
- * send something to your bot, e.g. "/start"
-  * if you are in group chat, just mention it, e.g. `@ZbxTgDevBot ping`
- * create new action like this:
+ * Place `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your zabbix_server.conf
+ * Create `zbxtg_settings.py` with your settings and save them in the same directory as the script, see example for layout
+  * Create a bot in Telegram and get API key
+  * Create readonly user in Zabbix
+  * Set proxy host:port in `zbxtg_settings.py` if you need an internet proxy
+ * Add new media for Telegram in Zabbix web interface with these settings:
+ 
+![](http://i.imgur.com/ajQtVAq.png) 
+ 
+ * Send a message to your bot via Telegram, e.g. "/start"
+  * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
+ * Create new action like this:
 
 <img src="http://i.imgur.com/ZNKtBUX.png" width="300px">
 #### Annotations
