@@ -1,7 +1,7 @@
 # Zabbix-in-Telegram
 Zabbix Notifications with graphs in Telegram
 
-Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
+Join us in our **Telegram group** via this link: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
 
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
@@ -20,13 +20,19 @@ Join us on **Telegram group**: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyj
   * Set proxy host:port in `zbxtg_settings.py` if you need an internet proxy
  * Add new media for Telegram in Zabbix web interface with these settings:
  
-![](http://i.imgur.com/ajQtVAq.png) 
+![](http://i.imgur.com/sjGjwo5.png) 
  
  * Send a message to your bot via Telegram, e.g. "/start"
   * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
- * Create new action like this:
+ * Create a new action like this:
 
-<img src="http://i.imgur.com/ZNKtBUX.png" width="300px">
+<img src="http://i.imgur.com/ZNKtBUX.png" width="400px" height="340px">
+
+ * Add the appropriate Media Type to your user
+  * The username is CASE-SENSITIVE
+  
+![](http://i.imgur.com/doHpeOP.png)
+
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
@@ -42,10 +48,10 @@ You can use markdown in your action: https://core.telegram.org/bots/api#using-ma
 #### Debug
 
 * You can use the following command to send a message from your command line: </br>
-`./zbxtg.py "<user name>" "<message>" "<message>"`
-* For `<username>` substitute your Telegram username, NOT that of your bot (case-sensitive)
-* For `<message>` just substitute something like "test"
-* You can omit the `"`, these are optional
+`./zbxtg.py "<username>" "<message>" "<message>"`
+ * For `<username>` substitute your Telegram username, NOT that of your bot (case-sensitive)
+ * For `<message>` just substitute something like "test"
+ * You can omit the `"`, these are optional
 
 ---
 
