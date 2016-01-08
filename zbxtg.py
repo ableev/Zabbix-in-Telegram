@@ -12,6 +12,33 @@ from os.path import dirname
 import zbxtg_settings
 
 
+def list_cut(elements, symbols_limit):
+    symbols_count = symbols_count_now = 0
+    elements_new = []
+    element_last = None
+    element_last_list = []
+    for e in elements:
+        symbols_count_now = symbols_count + len(e)
+        if symbols_count_now > symbols_limit:
+            limit_idx = symbols_limit - symbols_count
+            e_list = list(e)
+            for idx, ee in enumerate(e_list):
+                if idx < limit_idx:
+                    element_last_list.append(ee)
+                else:
+                    break
+            break
+        else:
+            symbols_count = symbols_count_now + 1
+            elements_new.append(e)
+    if symbols_count_now < symbols_limit:
+        return elements, False
+    else:
+        element_last = "".join(element_last_list)
+        elements_new.append(element_last)
+        return elements_new, True
+
+
 def tg_get_updates(proxies, key):
     tg_url_bot_general = "https://api.telegram.org/bot"
     url = tg_url_bot_general + key + "/getUpdates"
@@ -207,6 +234,12 @@ def main():
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(zbxtg_itemid)
         zbx_image = zbx_image_get(proxies_zbx, zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
                                   zbxtg_itemid, zbxtg_image_period, zbxtg_title, zbxtg_path_cache_img)
+        zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+        if is_modified:
+            print(zbxtg_settings.zbx_tg_prefix, "probably you will see MEDIA_CAPTION_TOO_LONG error, "
+                                                "the message has been cut to 200 symbols, "
+                                                "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
+                                                "#issuecomment-166895044")
         if tg_send_photo(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text, zbxtg_path_cache_img):
             os.remove(zbxtg_path_cache_img)
 
