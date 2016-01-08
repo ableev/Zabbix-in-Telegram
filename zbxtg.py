@@ -80,10 +80,13 @@ def main():
 
     is_debug = False
 
-    tmp_dir = "/tmp/" + zbxtg_settings.zbx_tg_prefix
+    tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
 
     if not os.path.isdir(tmp_dir):
-        tmp_dir = "/tmp"
+        try:
+            os.makedirs(tmp_dir)
+        except:
+            tmp_dir = "/tmp"
 
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
