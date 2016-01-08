@@ -212,10 +212,6 @@ def main():
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
-    # add sign
-    zbxtg_body_text.append("--")
-    zbxtg_body_text.append(zbxtg_settings.zbx_server)
-
     for l in zbxtg_body:
         if l.find(zbxtg_settings.zbx_tg_prefix) > -1:
             m0 = re.match(zbxtg_settings.zbx_tg_prefix + ";itemid(:|\ )+(\d+)", l)
@@ -231,6 +227,10 @@ def main():
                 zbxtg_image_period = m2.group(2)
         else:
             zbxtg_body_text.append(l)
+
+    # add sign
+    zbxtg_body_text.append("--")
+    zbxtg_body_text.append(zbxtg_settings.zbx_server)
 
     if tg_method == "text":
         tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
