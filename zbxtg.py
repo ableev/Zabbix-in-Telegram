@@ -228,9 +228,13 @@ def main():
         else:
             zbxtg_body_text.append(l)
 
-    # add sign
-    zbxtg_body_text.append("--")
-    zbxtg_body_text.append(zbxtg_settings.zbx_server)
+    # add signature, turned off by default, you can turn it on in config
+    try:
+        if zbxtg_settings.zbx_tg_signature:
+            zbxtg_body_text.append("--")
+            zbxtg_body_text.append(zbxtg_settings.zbx_server)
+    except:
+        pass
 
     if tg_method == "text":
         tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
