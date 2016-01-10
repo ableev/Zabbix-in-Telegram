@@ -159,7 +159,6 @@ def main():
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py":
         tg_chat = True
-        print "OK"
 
     if tg_chat:
         tg_contact_type = "group"
