@@ -7,6 +7,7 @@ zbx_tg_signature = False
 zbx_server = "http://localhost"  # zabbix server full url
 zbx_api_user = "api"
 zbx_api_pass = "api"
+zbx_api_verify = True  # True - do not ignore self signed certificates, False - ignore
 
 proxy_to_zbx = None
 proxy_to_tg = None

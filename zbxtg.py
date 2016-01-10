@@ -84,18 +84,18 @@ def tg_send_photo(proxies, key, to, message, path):
         return answer_json
 
 
-def zbx_image_get(proxies, api_server, api_user, api_pass, itemid, period, title, file):
+def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, file):
     data_api = {"name": api_user, "password": api_pass, "enter": "Sign in"}
     zbx_img_url = api_server + "/chart3.php?period={1}&name={2}" \
                                "&width=900&height=200&graphtype=0&legend=1" \
                                "&items[0][itemid]={0}&items[0][sortorder]=0" \
                                "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title)
 
-    cookie = requests.post(api_server + "/", data=data_api, proxies=proxies).cookies
+    cookie = requests.post(api_server + "/", data=data_api, proxies=proxies, verify=verify).cookies
     if not cookie:
         print(zbxtg_settings.zbx_tg_prefix + " authorization has failed")
         sys.exit(1)
-    res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies)
+    res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies, verify=verify)
     res_img = res._content
     with open(file, 'wb') as fp:
         fp.write(res_img)
@@ -244,7 +244,8 @@ def main():
         tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
     elif tg_method == "image":
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(zbxtg_itemid)
-        zbx_image = zbx_image_get(proxies_zbx, zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
+        zbx_image = zbx_image_get(proxies_zbx, zbxtg_settings.zbx_api_verify,
+                                  zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
                                   zbxtg_itemid, zbxtg_image_period, zbxtg_title, zbxtg_path_cache_img)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
         if is_modified:
