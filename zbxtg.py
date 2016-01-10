@@ -198,7 +198,7 @@ def main():
             tmp_update = True
 
     if tmp_update:
-        cache_string = "{0};{1};{2}".format(zbx_to, tg_contact_type, uid)
+        cache_string = "{0};{1};{2}\n".format(zbx_to, tg_contact_type, str(uid).rstrip())
         with open(tmp_uids, "a") as cache_file_uids:
             cache_file_uids.write(cache_string)
 
