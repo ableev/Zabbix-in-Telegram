@@ -86,8 +86,8 @@ def tg_send_photo(proxies, key, to, message, path):
 
 def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, file):
     if not verify:
-        from requests.packages.urllib3.exceptions import InsecureRequestWarning
-        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+        import requests.packages.urllib3.exceptions
+        requests.packages.urllib3.disable_warnings()
     data_api = {"name": api_user, "password": api_pass, "enter": "Sign in"}
     zbx_img_url = api_server + "/chart3.php?period={1}&name={2}" \
                                "&width=900&height=200&graphtype=0&legend=1" \
