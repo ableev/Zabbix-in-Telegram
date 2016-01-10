@@ -156,6 +156,11 @@ def main():
     if zbx_body.find(zbxtg_settings.zbx_tg_prefix + ";debug") > -1:
         is_debug = True
 
+    # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
+    if sys.argv[0].split("/")[-1] == "zbxtg_group.py":
+        tg_chat = True
+        print "OK"
+
     if tg_chat:
         tg_contact_type = "group"
         tg_contact_type_old = "chat"
