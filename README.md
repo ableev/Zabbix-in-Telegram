@@ -3,6 +3,8 @@ Zabbix Notifications with graphs in Telegram
 
 Join us in our **Telegram group** via this link: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
 
+Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
+
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
 - [x] You can send them both in private and group chats
