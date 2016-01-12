@@ -246,7 +246,12 @@ def main():
         tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
     elif tg_method == "image":
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(zbxtg_itemid)
-        zbx_image = zbx_image_get(proxies_zbx, zbxtg_settings.zbx_api_verify,
+        zbx_api_verify = True
+        try:
+            zbx_api_verify = zbxtg_settings.zbx_api_verify
+        except:
+            pass
+        zbx_image = zbx_image_get(proxies_zbx, zbx_api_verify,
                                   zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
                                   zbxtg_itemid, zbxtg_image_period, zbxtg_title, zbxtg_path_cache_img)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
