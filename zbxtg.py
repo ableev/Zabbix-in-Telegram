@@ -98,7 +98,7 @@ def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, perio
         print(zbxtg_settings.zbx_tg_prefix, "probably the server in your config file has not full URL (for example "
                                             "'{0}' instead of '{1}')".format(api_server, api_server + "/zabbix"))
     if not cookie:
-        print(zbxtg_settings.zbx_tg_prefix + "authorization has failed")
+        print(zbxtg_settings.zbx_tg_prefix, "authorization has failed, url: {0}".format(api_server + "/"))
         sys.exit(1)
     res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies, verify=verify)
     res_code = res.status_code
@@ -174,7 +174,7 @@ def main():
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
-            setting = re.split("[\s:=]+", line, maxsplit=1)
+            setting = re.split("[\s\:\=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
             if len(setting) > 1:
                 value = setting[1]
