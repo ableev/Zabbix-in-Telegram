@@ -15,34 +15,48 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 **First of all**: You need to install the `requests` module for python, this is required for operation! </br>
                   To do so, enter `pip install requests` in your commandline!
 
- * Place `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your zabbix_server.conf
+ * Put `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your zabbix_server.conf
+ * Put `zbxtg_group.py` in the same location if you want to send messages to the group chat
  * Create `zbxtg_settings.py` with your settings and save them in the same directory as the script, see example for layout
   * Create a bot in Telegram and get API key
-  * Create readonly user in Zabbix
+  * Create readonly user in Zabbix (for getting graphs images from zabbix)
   * Set proxy host:port in `zbxtg_settings.py` if you need an internet proxy
  * Add new media for Telegram in Zabbix web interface with these settings:
  
-![](http://i.imgur.com/sjGjwo5.png) 
+<img src="https://i.imgur.com/Ytrbe4S.png" width="400px">
+
+ * Add another one if you want to send messages to the group
+ 
+<img src="http://i.imgur.com/OTq4aQd.png" width="400px">
  
  * Send a message to your bot via Telegram, e.g. "/start"
   * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
  * Create a new action like this:
 
-<img src="http://i.imgur.com/ZNKtBUX.png" width="400px" height="340px">
+<img src="https://i.imgur.com/ZNKtBUX.png" width="400px">
 
  * Add the appropriate Media Type to your user
-  * The username is CASE-SENSITIVE
-  
-![](http://i.imgur.com/doHpeOP.png)
+  * The username is **CASE-SENSITIVE**
+  * Group chats don't have URLs, so you need to put group's name in media type
+
+  * Private:
+
+  <img src="https://i.imgur.com/GVDlTU5.png" width="400px">
+
+  * Group:
+
+  <img src="https://i.imgur.com/TgcCqDf.png" width="400px">
 
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
 zbxth;chat -- enables sending to group chats (default - set to 1-1 private chat)
 zbxtg;graphs_period=10800 -- set graphs period (default - 3600 seconds)
+zbxtg;graphs_width=700 -- set graphs width (default - 900px)
+zbxtg;graphs_height=300 -- set graphs height (default - 300px)
 zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
-zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir
+zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
 ```
 
 You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown
@@ -50,9 +64,9 @@ You can use markdown in your action: https://core.telegram.org/bots/api#using-ma
 #### Debug
 
 * You can use the following command to send a message from your command line: </br>
-`./zbxtg.py "<username>" "<message>" "<message>"`
+`./zbxtg.py "<username>" "<message_subject>" "<message_body>"`
  * For `<username>` substitute your Telegram username, NOT that of your bot (case-sensitive)
- * For `<message>` just substitute something like "test"
+ * For `<message_subject>` and `<message_body>` just substitute something like "test" "test" (for Telegram it's doesn't matter between subject and body
  * You can omit the `"`, these are optional
 
 ---
