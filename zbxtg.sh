@@ -30,6 +30,7 @@ login() {
 
 get_image() {
     URL=$1
+    URL=$(echo "${URL}" | sed -e 's/\ /%20/g')
     IMG_NAME=$2
     # downloads png graph and saves it to temporary path
     IS_DEBUG && echo "${CURL} --cookie ${TMP_COOKIE} --globoff \"${URL}\" -o ${IMG_NAME}" >>${LOG}
