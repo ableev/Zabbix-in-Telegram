@@ -70,7 +70,6 @@ def tg_send_message(proxies, key, to, message):
 def tg_send_photo(proxies, key, to, message, path):
     tg_url_bot_general = "https://api.telegram.org/bot"
     url = tg_url_bot_general + key + "/sendPhoto"
-    file = path.split("/")[-1]
     message = "\n".join(message)
     params = {"chat_id": to, "caption": message}
     files = {"photo": open(path, 'rb')}
@@ -84,20 +83,28 @@ def tg_send_photo(proxies, key, to, message, path):
         return answer_json
 
 
-def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, file):
+def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, width, height, file):
     if not verify:
         requests.packages.urllib3.disable_warnings()
     data_api = {"name": api_user, "password": api_pass, "enter": "Sign in"}
     zbx_img_url = api_server + "/chart3.php?period={1}&name={2}" \
-                               "&width=900&height=200&graphtype=0&legend=1" \
+                               "&width={3}&height={4}&graphtype=0&legend=1" \
                                "&items[0][itemid]={0}&items[0][sortorder]=0" \
-                               "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title)
-
-    cookie = requests.post(api_server + "/", data=data_api, proxies=proxies, verify=verify).cookies
+                               "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
+                                                                                     width, height)
+    req_cookie = requests.post(api_server + "/", data=data_api, proxies=proxies, verify=verify)
+    cookie = req_cookie.cookies
+    if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
+        print(zbxtg_settings.zbx_tg_prefix, "probably the server in your config file has not full URL (for example "
+                                            "'{0}' instead of '{1}')".format(api_server, api_server + "/zabbix"))
     if not cookie:
-        print(zbxtg_settings.zbx_tg_prefix + " authorization has failed")
+        print(zbxtg_settings.zbx_tg_prefix + "authorization has failed")
         sys.exit(1)
     res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies, verify=verify)
+    res_code = res.status_code
+    if res_code == 404:
+        print(zbxtg_settings.zbx_tg_prefix, "can't get image from '{0}'".format(zbx_img_url))
+        sys.exit(1)
     res_img = res._content
     with open(file, 'wb') as fp:
         fp.write(res_img)
@@ -106,8 +113,6 @@ def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, perio
 
 
 def main():
-
-    is_debug = False
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
 
@@ -133,10 +138,8 @@ def main():
 
     zbx_to = zbx_to.replace("@", "")
 
-    tg_chat = False  # send message to chat or in private
     tg_contact_type = "private"
     tg_contact_type_old = "user"
-    tg_method = "text"  # by default send text
 
     proxies_tg = {}
     if zbxtg_settings.proxy_to_tg:
@@ -145,18 +148,46 @@ def main():
     if zbxtg_settings.proxy_to_zbx:
         proxies_zbx = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
 
-    zbxtg_image_period = 3600  # default for graph
-    zbxtg_itemid = 0  # itemid for graph
-    zbxtg_title = None  # title for graph
+    zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
+    zbxtg_body_text = []
 
-    if zbx_body.find(zbxtg_settings.zbx_tg_prefix + ";graphs") > -1:
-        tg_method = "image"
-    if zbx_body.find(zbxtg_settings.zbx_tg_prefix + ";chat") > -1:
-        tg_chat = True
-    if zbx_body.find(zbxtg_settings.zbx_tg_prefix + ";debug") > -1:
-        is_debug = True
-    if zbx_body.find(zbxtg_settings.zbx_tg_prefix + ";debug") > -1:
-        is_debug = True
+    settings = {
+        "zbxtg_itemid": "0",  # itemid for graph
+        "zbxtg_title": None,  # title for graph
+        "zbxtg_image_period": "3600",
+        "zbxtg_image_width": "900",
+        "zbxtg_image_height": "200",
+        "tg_method_image": False,  # if True - default send images, False - send text
+        "tg_chat": False,  # send message to chat or in private
+        "is_debug": False,
+    }
+    settings_description = {
+        "itemid": {"name": "zbxtg_itemid", "type": "int"},
+        "title": {"name": "zbxtg_title", "type": "str"},
+        "graphs_period": {"name": "zbxtg_image_period", "type": "int"},
+        "graphs_width": {"name": "zbxtg_image_width", "type": "int"},
+        "graphs_height": {"name": "zbxtg_image_height", "type": "int"},
+        "graphs": {"name": "tg_method_image", "type": "bool"},
+        "chat": {"name": "tg_chat", "type": "bool"},
+        "debug": {"name": "is_debug", "type": "bool"},
+    }
+
+    for line in zbxtg_body:
+        if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
+            setting = re.split("[\s:]+", line)
+            key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
+            if len(setting) > 1:
+                value = setting[1]
+            else:
+                value = True
+            if key in settings_description:
+                settings[settings_description[key]["name"]] = value
+        else:
+            zbxtg_body_text.append(line)
+
+    tg_method_image = bool(settings["tg_method_image"])
+    tg_chat = bool(settings["tg_chat"])
+    is_debug = bool(settings["is_debug"])
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py":
@@ -167,7 +198,7 @@ def main():
         tg_contact_type_old = "chat"
 
     if is_debug:
-        log_file = tmp_dir + "debug." + hash_ts + ".log"
+        log_file = tmp_dir + ".debug." + hash_ts + ".log"
 
     uid = None
 
@@ -215,24 +246,6 @@ def main():
             print("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(zbx_to))
         sys.exit(1)
 
-    zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
-    zbxtg_body_text = []
-
-    for l in zbxtg_body:
-        if l.find(zbxtg_settings.zbx_tg_prefix) > -1:
-            m0 = re.match(zbxtg_settings.zbx_tg_prefix + ";itemid(:|\ )+(\d+)", l)
-            if m0:
-                zbxtg_itemid = m0.group(2)
-
-            m1 = re.match(zbxtg_settings.zbx_tg_prefix + ";title:(.*)", l)
-            if m1:
-                zbxtg_title = m1.group(1)
-
-            m2 = re.match(zbxtg_settings.zbx_tg_prefix + ";graphs_period(:|\ )+(\d+)", l)
-            if m2:
-                zbxtg_image_period = m2.group(2)
-        else:
-            zbxtg_body_text.append(l)
 
     # add signature, turned off by default, you can turn it on in config
     try:
@@ -242,10 +255,10 @@ def main():
     except:
         pass
 
-    if tg_method == "text":
+    if not tg_method_image:
         tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
-    elif tg_method == "image":
-        zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(zbxtg_itemid)
+    else:
+        zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(settings["zbxtg_itemid"])
         zbx_api_verify = True
         try:
             zbx_api_verify = zbxtg_settings.zbx_api_verify
@@ -253,7 +266,9 @@ def main():
             pass
         zbx_image = zbx_image_get(proxies_zbx, zbx_api_verify,
                                   zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
-                                  zbxtg_itemid, zbxtg_image_period, zbxtg_title, zbxtg_path_cache_img)
+                                  settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
+                                  settings["zbxtg_image_width"], settings["zbxtg_image_height"],
+                                  zbxtg_path_cache_img)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
         if is_modified:
             print(zbxtg_settings.zbx_tg_prefix, "probably you will see MEDIA_CAPTION_TOO_LONG error, "
