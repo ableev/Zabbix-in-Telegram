@@ -174,7 +174,7 @@ def main():
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
-            setting = re.split("[\s:]+", line, maxsplit=1)
+            setting = re.split("[\s:=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
             if len(setting) > 1:
                 value = setting[1]
