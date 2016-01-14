@@ -32,6 +32,13 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
  * Send a message to your bot via Telegram, e.g. "/start"
   * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
  * Create a new action like this:
+```
+Last value: {ITEM.LASTVALUE1} ({TIME})
+zbxtg;graphs
+zbxtg;graphs_period=10800
+zbxtg;itemid:{ITEM.ID1}
+zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
+```
 
 <img src="https://i.imgur.com/ZNKtBUX.png" width="400px">
 
