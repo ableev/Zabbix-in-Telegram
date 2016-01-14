@@ -176,7 +176,7 @@ def main():
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
             setting = re.split("[\s\:\=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
-            if len(setting) > 1:
+            if len(setting) > 1 and len(setting[1]) > 0:
                 value = setting[1]
             else:
                 value = True
