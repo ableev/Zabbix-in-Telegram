@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>Zabbix in Telegram by ableev</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">Zabbix in Telegram</h1>
+      <h2 class="project-tagline">Zabbix Notifications with graphs in Telegram</h2>
+      <a href="https://github.com/ableev/Zabbix-in-Telegram" class="btn">View on GitHub</a>
+      <a href="https://github.com/ableev/Zabbix-in-Telegram/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/ableev/Zabbix-in-Telegram/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="zabbix-in-telegram" class="anchor" href="#zabbix-in-telegram" aria-hidden="true"><span class="octicon octicon-link"></span></a>Zabbix-in-Telegram</h1>
+
+<p>Zabbix Notifications with graphs in Telegram</p>
+
+<p>Join us in our <strong>Telegram group</strong> via this link: <a href="https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig">https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig</a></p>
+
+<p>Rate on <a href="https://share.zabbix.com">share.zabbix.com</a>: <a href="https://share.zabbix.com/cat-notifications/zabbix-in-telegram">https://share.zabbix.com/cat-notifications/zabbix-in-telegram</a></p>
+
+<h3>
+<a id="features" class="anchor" href="#features" aria-hidden="true"><span class="octicon octicon-link"></span></a>Features</h3>
+
+<ul>
+<li>[x] Graphs based on latest data are sent directly to your messenger</li>
+<li>[x] You can send them both in private and group chats</li>
+<li>[x] Saves chatid as a temporary file</li>
+</ul>
+
+<h3>
+<a id="configuration--installation" class="anchor" href="#configuration--installation" aria-hidden="true"><span class="octicon octicon-link"></span></a>Configuration / Installation</h3>
+
+<p><strong>First of all</strong>: You need to install the <code>requests</code> module for python, this is required for operation! 
+                  To do so, enter <code>pip install requests</code> in your commandline!</p>
+
+<ul>
+<li>Put <code>zbxtg.py</code> in your <code>AlertScriptsPath</code> directory, the path is set inside your zabbix_server.conf</li>
+<li>Put <code>zbxtg_group.py</code> in the same location if you want to send messages to the group chat</li>
+<li>Create <code>zbxtg_settings.py</code> with your settings and save them in the same directory as the script, see example for layout
+
+<ul>
+<li>Create a bot in Telegram and get API key</li>
+<li>Create readonly user in Zabbix (for getting graphs images from zabbix)</li>
+<li>Set proxy host:port in <code>zbxtg_settings.py</code> if you need an internet proxy</li>
+</ul>
+</li>
+<li>Add new media for Telegram in Zabbix web interface with these settings:</li>
+</ul>
+
+<p><img src="https://i.imgur.com/Ytrbe4S.png" width="400px"></p>
+
+<ul>
+<li>Add another one if you want to send messages to the group</li>
+</ul>
+
+<p><img src="http://i.imgur.com/OTq4aQd.png" width="400px"></p>
+
+<ul>
+<li>Send a message to your bot via Telegram, e.g. "/start"
+
+<ul>
+<li>If you are in group chat, just mention your bot, e.g. <code>@ZbxTgDevBot ping</code>
+</li>
+</ul>
+</li>
+<li>Create a new action like this:</li>
+</ul>
+
+<pre><code>Last value: {ITEM.LASTVALUE1} ({TIME})
+zbxtg;graphs
+zbxtg;graphs_period=10800
+zbxtg;itemid:{ITEM.ID1}
+zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
+</code></pre>
+
+<p><img src="https://i.imgur.com/ZNKtBUX.png" width="400px"></p>
+
+<ul>
+<li>
+<p>Add the appropriate Media Type to your user</p>
+
+<ul>
+<li>The username is <strong>CASE-SENSITIVE</strong>
+</li>
+<li><p>Group chats don't have URLs, so you need to put group's name in media type</p></li>
+<li><p>Private:</p></li>
+</ul>
+
+<p><img src="https://i.imgur.com/GVDlTU5.png" width="400px"></p>
+
+<ul>
+<li>Group:</li>
+</ul>
+
+<p><img src="https://i.imgur.com/TgcCqDf.png" width="400px"></p>
+</li>
+</ul>
+
+<h4>
+<a id="annotations" class="anchor" href="#annotations" aria-hidden="true"><span class="octicon octicon-link"></span></a>Annotations</h4>
+
+<pre><code>zbxtg;graphs -- enables attached graphs
+zbxth;chat -- enables sending to group chats (default - set to 1-1 private chat)
+zbxtg;graphs_period=10800 -- set graphs period (default - 3600 seconds)
+zbxtg;graphs_width=700 -- set graphs width (default - 900px)
+zbxtg;graphs_height=300 -- set graphs height (default - 300px)
+zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
+zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
+zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
+</code></pre>
+
+<p>You can use markdown in your action: <a href="https://core.telegram.org/bots/api#using-markdown">https://core.telegram.org/bots/api#using-markdown</a></p>
+
+<h4>
+<a id="debug" class="anchor" href="#debug" aria-hidden="true"><span class="octicon octicon-link"></span></a>Debug</h4>
+
+<ul>
+<li>You can use the following command to send a message from your command line: 
+<code>./zbxtg.py "&lt;username&gt;" "&lt;message_subject&gt;" "&lt;message_body&gt;"</code>
+
+<ul>
+<li>For <code>&lt;username&gt;</code> substitute your Telegram username, NOT that of your bot (case-sensitive)</li>
+<li>For <code>&lt;message_subject&gt;</code> and <code>&lt;message_body&gt;</code> just substitute something like "test" "test" (for Telegram it's doesn't matter between subject and body</li>
+<li>You can omit the <code>"</code>, these are optional</li>
+</ul>
+</li>
+</ul>
+
+<hr>
+
+<p><img src="http://i.imgur.com/1T4aHuf.png" alt="">
+<img src="http://i.imgur.com/5ZPyvoe.png" alt=""></p>
+
+<h3>
+<a id="known-issues" class="anchor" href="#known-issues" aria-hidden="true"><span class="octicon octicon-link"></span></a>Known issues</h3>
+
+<h4>
+<a id="media_caption_too_long" class="anchor" href="#media_caption_too_long" aria-hidden="true"><span class="octicon octicon-link"></span></a>MEDIA_CAPTION_TOO_LONG</h4>
+
+<p>If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
+Such captions will be automatically cut to 200 symbols.</p>
+
+<h2></h2>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/ableev/Zabbix-in-Telegram">Zabbix in Telegram</a> is maintained by <a href="https://github.com/ableev">ableev</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
