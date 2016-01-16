@@ -242,7 +242,7 @@ def main():
     if not uid:
         if tg_contact_type == "private":
             print("User '{0}' needs to send some text bot in private".format(zbx_to))
-        if tg_contact_type == "chat":
+        if tg_contact_type == "group":
             print("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(zbx_to))
         sys.exit(1)
 
