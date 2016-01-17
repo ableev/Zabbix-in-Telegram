@@ -73,6 +73,46 @@ class TelegramAPI():
         return uid
 
 
+class ZabbixAPI():
+    def __init__(self, server, username, password, proxies, verify):
+        self.server = server
+        self.username = username
+        self.password = password
+        self.proxies = proxies
+        self.verify = verify
+
+        if not self.verify:
+            requests.packages.urllib3.disable_warnings()
+
+        data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
+        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
+        cookie = req_cookie.cookies
+        if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
+            print(zbxtg_settings.zbx_tg_prefix, "probably the server in your config file has not full URL (for example "
+                                                "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
+        if not cookie:
+            print(zbxtg_settings.zbx_tg_prefix, "authorization has failed, url: {0}".format(self.server + "/"))
+            sys.exit(1)
+
+        self.cookie = cookie
+
+    def graph_get(self, itemid, period, title, width, height, file):
+        zbx_img_url = self.server + "/chart3.php?period={1}&name={2}" \
+                           "&width={3}&height={4}&graphtype=0&legend=1" \
+                           "&items[0][itemid]={0}&items[0][sortorder]=0" \
+                           "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
+                                                                                 width, height)
+        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
+        res_code = res.status_code
+        if res_code == 404:
+            print(zbxtg_settings.zbx_tg_prefix, "can't get image from '{0}'".format(zbx_img_url))
+            sys.exit(1)
+        res_img = res._content
+        with open(file, 'wb') as fp:
+            fp.write(res_img)
+        return True
+
+
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
     elements_new = []
@@ -98,35 +138,6 @@ def list_cut(elements, symbols_limit):
         element_last = "".join(element_last_list)
         elements_new.append(element_last)
         return elements_new, True
-
-
-def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, width, height, file):
-    if not verify:
-        requests.packages.urllib3.disable_warnings()
-    data_api = {"name": api_user, "password": api_pass, "enter": "Sign in"}
-    zbx_img_url = api_server + "/chart3.php?period={1}&name={2}" \
-                               "&width={3}&height={4}&graphtype=0&legend=1" \
-                               "&items[0][itemid]={0}&items[0][sortorder]=0" \
-                               "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
-                                                                                     width, height)
-    req_cookie = requests.post(api_server + "/", data=data_api, proxies=proxies, verify=verify)
-    cookie = req_cookie.cookies
-    if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
-        print(zbxtg_settings.zbx_tg_prefix, "probably the server in your config file has not full URL (for example "
-                                            "'{0}' instead of '{1}')".format(api_server, api_server + "/zabbix"))
-    if not cookie:
-        print(zbxtg_settings.zbx_tg_prefix, "authorization has failed, url: {0}".format(api_server + "/"))
-        sys.exit(1)
-    res = requests.get(zbx_img_url, cookies=cookie, proxies=proxies, verify=verify)
-    res_code = res.status_code
-    if res_code == 404:
-        print(zbxtg_settings.zbx_tg_prefix, "can't get image from '{0}'".format(zbx_img_url))
-        sys.exit(1)
-    res_img = res._content
-    with open(file, 'wb') as fp:
-        fp.write(res_img)
-
-    return True
 
 
 def main():
@@ -164,9 +175,17 @@ def main():
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key, proxies=proxies_tg)
 
+    zbx_api_verify = True
+    try:
+        zbx_api_verify = zbxtg_settings.zbx_api_verify
+    except:
+        pass
     proxies_zbx = {}
     if zbxtg_settings.proxy_to_zbx:
         proxies_zbx = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
+
+    zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
+                    password=zbxtg_settings.zbx_api_pass, proxies=proxies_zbx, verify=zbx_api_verify)
 
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
@@ -269,14 +288,8 @@ def main():
         tg.send_message(uid, zbxtg_body_text)
     else:
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(settings["zbxtg_itemid"])
-        zbx_api_verify = True
-        try:
-            zbx_api_verify = zbxtg_settings.zbx_api_verify
-        except:
-            pass
-        zbx_image = zbx_image_get(proxies_zbx, zbx_api_verify,
-                                  zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass,
-                                  settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
+
+        zbx_image = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
                                   settings["zbxtg_image_width"], settings["zbxtg_image_height"],
                                   zbxtg_path_cache_img)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
