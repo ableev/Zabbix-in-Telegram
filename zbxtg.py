@@ -44,7 +44,7 @@ class TelegramAPI():
             return answer_json
 
     def send_photo(self, to, message, path):
-        url = self.tg_url_bot_general + self.key + "/sendMessage"
+        url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
         params = {"chat_id": to, "caption": message}
         files = {"photo": open(path, 'rb')}
