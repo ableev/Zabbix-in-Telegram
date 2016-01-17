@@ -229,7 +229,7 @@ def main():
                         uid = chat["id"]
             if chat["type"] == tg_contact_type == "group":
                 if "title" in chat:
-                    if chat["title"] == zbx_to:
+                    if chat["title"] == zbx_to.decode("utf-8"):
                         uid = chat["id"]
         if uid:
             tmp_update = True
