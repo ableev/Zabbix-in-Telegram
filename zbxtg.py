@@ -57,6 +57,21 @@ class TelegramAPI():
         else:
             return answer_json
 
+    def get_uid(self, name, type):
+        uid = 0
+        updates = self.get_updates()
+        for m in updates["result"]:
+            chat = m["message"]["chat"]
+            if chat["type"] == type == "private":
+                if "username" in chat:
+                    if chat["username"] == name:
+                        uid = chat["id"]
+            if chat["type"] == type == "group":
+                if "title" in chat:
+                    if chat["title"] == name.decode("utf-8"):
+                        uid = chat["id"]
+        return uid
+
 
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
@@ -225,17 +240,7 @@ def main():
                 tmp_update = True
 
     if not uid:
-        tg_updates = tg.get_updates()
-        for m in tg_updates["result"]:
-            chat = m["message"]["chat"]
-            if chat["type"] == tg_contact_type == "private":
-                if "username" in chat:
-                    if chat["username"] == zbx_to:
-                        uid = chat["id"]
-            if chat["type"] == tg_contact_type == "group":
-                if "title" in chat:
-                    if chat["title"] == zbx_to.decode("utf-8"):
-                        uid = chat["id"]
+        uid = tg.get_uid(zbx_to, tg_contact_type)
         if uid:
             tmp_update = True
 
