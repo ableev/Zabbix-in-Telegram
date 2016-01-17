@@ -12,6 +12,52 @@ from os.path import dirname
 import zbxtg_settings
 
 
+class TelegramAPI():
+    tg_url_bot_general = "https://api.telegram.org/bot"
+
+    def __init__(self, key, proxies):
+        self.key = key
+        self.proxies = proxies
+
+    def get_updates(self):
+        url = self.tg_url_bot_general + self.key + "/getUpdates"
+        res = requests.get(url, proxies=self.proxies)
+        answer = res._content
+        answer_json = json.loads(answer)
+        if not answer_json["ok"]:
+            print(answer_json)
+            sys.exit(1)
+        else:
+            return answer_json
+
+    def send_message(self, to, message):
+        url = self.tg_url_bot_general + self.key + "/sendMessage"
+        message = "\n".join(message)
+        params = {"chat_id": to, "text": message, "parse_mode": "Markdown"}
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res._content
+        answer_json = json.loads(answer)
+        if not answer_json["ok"]:
+            print(answer_json)
+            sys.exit(1)
+        else:
+            return answer_json
+
+    def send_photo(self, to, message, path):
+        url = self.tg_url_bot_general + self.key + "/sendMessage"
+        message = "\n".join(message)
+        params = {"chat_id": to, "caption": message}
+        files = {"photo": open(path, 'rb')}
+        res = requests.post(url, params=params, files=files, proxies=self.proxies)
+        answer = res._content
+        answer_json = json.loads(answer)
+        if not answer_json["ok"]:
+            print(answer_json)
+            sys.exit(1)
+        else:
+            return answer_json
+
+
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
     elements_new = []
@@ -37,50 +83,6 @@ def list_cut(elements, symbols_limit):
         element_last = "".join(element_last_list)
         elements_new.append(element_last)
         return elements_new, True
-
-
-def tg_get_updates(proxies, key):
-    tg_url_bot_general = "https://api.telegram.org/bot"
-    url = tg_url_bot_general + key + "/getUpdates"
-    res = requests.get(url, proxies=proxies)
-    answer = res._content
-    answer_json = json.loads(answer)
-    if not answer_json["ok"]:
-        print(answer_json)
-        sys.exit(1)
-    else:
-        return answer_json
-
-
-def tg_send_message(proxies, key, to, message):
-    tg_url_bot_general = "https://api.telegram.org/bot"
-    url = tg_url_bot_general + key + "/sendMessage"
-    message = "\n".join(message)
-    params = {"chat_id": to, "text": message, "parse_mode": "Markdown"}
-    res = requests.post(url, params=params, proxies=proxies)
-    answer = res._content
-    answer_json = json.loads(answer)
-    if not answer_json["ok"]:
-        print(answer_json)
-        sys.exit(1)
-    else:
-        return answer_json
-
-
-def tg_send_photo(proxies, key, to, message, path):
-    tg_url_bot_general = "https://api.telegram.org/bot"
-    url = tg_url_bot_general + key + "/sendPhoto"
-    message = "\n".join(message)
-    params = {"chat_id": to, "caption": message}
-    files = {"photo": open(path, 'rb')}
-    res = requests.post(url, params=params, files=files, proxies=proxies)
-    answer = res._content
-    answer_json = json.loads(answer)
-    if not answer_json["ok"]:
-        print(answer_json)
-        sys.exit(1)
-    else:
-        return answer_json
 
 
 def zbx_image_get(proxies, verify, api_server, api_user, api_pass, itemid, period, title, width, height, file):
@@ -144,6 +146,9 @@ def main():
     proxies_tg = {}
     if zbxtg_settings.proxy_to_tg:
         proxies_tg = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_tg)}
+
+    tg = TelegramAPI(key=zbxtg_settings.tg_key, proxies=proxies_tg)
+
     proxies_zbx = {}
     if zbxtg_settings.proxy_to_zbx:
         proxies_zbx = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
@@ -220,7 +225,7 @@ def main():
                 tmp_update = True
 
     if not uid:
-        tg_updates = tg_get_updates(proxies_tg, zbxtg_settings.tg_key)
+        tg_updates = tg.get_updates()
         for m in tg_updates["result"]:
             chat = m["message"]["chat"]
             if chat["type"] == tg_contact_type == "private":
@@ -256,7 +261,7 @@ def main():
         pass
 
     if not tg_method_image:
-        tg_send_message(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text)
+        tg.send_message(uid, zbxtg_body_text)
     else:
         zbxtg_path_cache_img = tmp_dir + "/{0}.png".format(settings["zbxtg_itemid"])
         zbx_api_verify = True
@@ -275,7 +280,7 @@ def main():
                                                 "the message has been cut to 200 symbols, "
                                                 "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
                                                 "#issuecomment-166895044")
-        if tg_send_photo(proxies_tg, zbxtg_settings.tg_key, uid, zbxtg_body_text, zbxtg_path_cache_img):
+        if tg.send_photo(uid, zbxtg_body_text, zbxtg_path_cache_img):
             os.remove(zbxtg_path_cache_img)
 
 
