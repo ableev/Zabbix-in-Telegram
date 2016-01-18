@@ -26,7 +26,7 @@ class TelegramAPI():
         answer = res._content
         answer_json = json.loads(answer)
         if not answer_json["ok"]:
-            print(answer_json)
+            print_message(answer_json)
             sys.exit(1)
         else:
             return answer_json
@@ -39,7 +39,7 @@ class TelegramAPI():
         answer = res._content
         answer_json = json.loads(answer)
         if not answer_json["ok"]:
-            print(answer_json)
+            print_message(answer_json)
             sys.exit(1)
         else:
             return answer_json
@@ -53,7 +53,7 @@ class TelegramAPI():
         answer = res._content
         answer_json = json.loads(answer)
         if not answer_json["ok"]:
-            print(answer_json)
+            print_message(answer_json)
             sys.exit(1)
         else:
             return answer_json
@@ -75,9 +75,9 @@ class TelegramAPI():
 
     def error_need_to_contact(self, to):
         if self.type == "private":
-            print("User '{0}' needs to send some text bot in private".format(to))
+            print_message("User '{0}' needs to send some text bot in private".format(to))
         if self.type == "group":
-            print("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
+            print_message("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
 
 
 class ZabbixAPI():
@@ -95,10 +95,10 @@ class ZabbixAPI():
         req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
         cookie = req_cookie.cookies
         if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
-            print(zbxtg_settings.zbx_tg_prefix, "probably the server in your config file has not full URL (for example "
+            print_message("probably the server in your config file has not full URL (for example "
                                                 "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
         if not cookie:
-            print(zbxtg_settings.zbx_tg_prefix, "authorization has failed, url: {0}".format(self.server + "/"))
+            print_message("authorization has failed, url: {0}".format(self.server + "/"))
             sys.exit(1)
 
         self.cookie = cookie
@@ -114,7 +114,7 @@ class ZabbixAPI():
         res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
         res_code = res.status_code
         if res_code == 404:
-            print(zbxtg_settings.zbx_tg_prefix, "can't get image from '{0}'".format(zbx_img_url))
+            print_message("can't get image from '{0}'".format(zbx_img_url))
             sys.exit(1)
         res_img = res._content
         with open(file, 'wb') as fp:
@@ -128,6 +128,12 @@ class ZabbixAPI():
         api_url = self.server + "/api_jsonrpc.php"
         api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
         return api._content
+
+
+def print_message(string):
+    string = str(string) + "\n"
+    filename = sys.argv[0].split("/")[-1]
+    sys.stderr.write(filename + ": " + string)
 
 
 def list_cut(elements, symbols_limit):
@@ -305,7 +311,7 @@ def main():
                                   tmp_dir)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
         if is_modified:
-            print(zbxtg_settings.zbx_tg_prefix, "probably you will see MEDIA_CAPTION_TOO_LONG error, "
+            print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
                                                 "the message has been cut to 200 symbols, "
                                                 "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
                                                 "#issuecomment-166895044")
