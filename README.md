@@ -57,7 +57,6 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
-zbxth;chat -- enables sending to group chats (default - set to 1-1 private chat)
 zbxtg;graphs_period=10800 -- set graphs period (default - 3600 seconds)
 zbxtg;graphs_width=700 -- set graphs width (default - 900px)
 zbxtg;graphs_height=300 -- set graphs height (default - 300px)
