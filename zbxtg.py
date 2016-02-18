@@ -19,6 +19,8 @@ class TelegramAPI():
         self.key = key
         self.proxies = proxies
         self.type = "private"  # 'private' for private chats or 'group' for group chats
+        if len(sys.argv) > 4 and (sys.argv[4] == "private" or sys.argv[4] == "group"):
+            self.type = sys.argv[4]
 
     def get_updates(self):
         url = self.tg_url_bot_general + self.key + "/getUpdates"
