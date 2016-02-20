@@ -24,7 +24,13 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
  * Add new media for Telegram in Zabbix web interface with these settings:
  
 <img src="https://i.imgur.com/Ytrbe4S.png" width="400px">
-
+ * If you use Zabbix 3.0, add following script parameters:
+```
+{ALERT.SENDTO}
+{ALERT.SUBJECT}
+{ALERT.MESSAGE}
+```
+<img src="http://i.imgur.com/pugmk6w.png" width="400px">
  * Add another one if you want to send messages to the group
  
 <img src="http://i.imgur.com/OTq4aQd.png" width="400px">
@@ -85,5 +91,12 @@ You can use markdown in your action: https://core.telegram.org/bots/api#using-ma
 #### MEDIA_CAPTION_TOO_LONG
 If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
 Such captions will be automatically cut to 200 symbols.
+
+#### Zabbix don't send messages
+If you successfully sent messages form console directly, you may need to check user rights to /tmp/zbxtg folder. User zabbix need to write access here:
+
+```chown -R zabbix:zabbix /tmp/zbxtg```
+
+Or just delete this folder, zabbix will create this folder with first alert.
 
 -
