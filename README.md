@@ -28,7 +28,8 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
  * Add another one if you want to send messages to the group
  
 <img src="http://i.imgur.com/OTq4aQd.png" width="400px">
- 
+
+ * **Note that Zabbix 3.0 has different settings for that step, see it there**: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
  * Send a message to your bot via Telegram, e.g. "/start"
   * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
  * Create a new action like this:
@@ -65,12 +66,12 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
 zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
 ```
 
-You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown
+You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown (**temporary disabled, some messages with default action text failed to sent due to Telegram's markdown parser**).
 
 #### Debug
 
 * You can use the following command to send a message from your command line: </br>
-`./zbxtg.py "<username>" "<message_subject>" "<message_body>"`
+`./zbxtg.py "<username>" "<message_subject>" "<message_body>" --debug`
  * For `<username>` substitute your Telegram username, NOT that of your bot (case-sensitive)
  * For `<message_subject>` and `<message_body>` just substitute something like "test" "test" (for Telegram it's doesn't matter between subject and body
  * You can omit the `"`, these are optional
@@ -86,4 +87,6 @@ You can use markdown in your action: https://core.telegram.org/bots/api#using-ma
 If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
 Such captions will be automatically cut to 200 symbols.
 
--
+#### Zabbix 3.0 
+https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
+
