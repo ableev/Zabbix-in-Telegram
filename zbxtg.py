@@ -15,26 +15,53 @@ import zbxtg_settings
 class TelegramAPI():
     tg_url_bot_general = "https://api.telegram.org/bot"
 
-    def __init__(self, key, proxies):
-        self.key = key
-        self.proxies = proxies
-        self.type = "private"  # 'private' for private chats or 'group' for group chats
-
-    def get_updates(self):
-        url = self.tg_url_bot_general + self.key + "/getUpdates"
+    def http_get(self, url):
         res = requests.get(url, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
-        if not answer_json["ok"]:
-            print_message(answer_json)
+        return answer_json
+
+    def __init__(self, key, proxies):
+        self.debug = False
+        self.key = key
+        self.proxies = proxies
+        self.type = "private"  # 'private' for private chats or 'group' for group chats
+        self.markdown = False
+        self.html = False
+
+    def get_me(self):
+        url = self.tg_url_bot_general + self.key + "/getMe"
+        me = self.http_get(url)
+        return me
+
+    def get_updates(self):
+        url = self.tg_url_bot_general + self.key + "/getUpdates"
+        if self.debug:
+            print_message(url)
+        updates = self.http_get(url)
+        if self.debug:
+            print_message("Content of /getUpdates:")
+            print_message(updates)
+        if not updates["ok"]:
+            print_message(updates)
             sys.exit(1)
         else:
-            return answer_json
+            return updates
 
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
         message = "\n".join(message)
-        params = {"chat_id": to, "text": message, "parse_mode": "Markdown"}
+        if not self.markdown and not self.html:
+            params = {"chat_id": to, "text": message}
+        else:
+            parse_mode = "HTML"
+            if self.markdown:
+                parse_mode = "Markdown"
+            params = {"chat_id": to, "text": message, "parse_mode": parse_mode}
+        if self.debug:
+            print_message("Trying to /sendMessage:")
+            print_message(url)
+            print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
@@ -60,6 +87,8 @@ class TelegramAPI():
 
     def get_uid(self, name):
         uid = 0
+        if self.debug:
+            print_message("Getting uid from /getUpdates...")
         updates = self.get_updates()
         for m in updates["result"]:
             chat = m["message"]["chat"]
@@ -82,6 +111,7 @@ class TelegramAPI():
 
 class ZabbixAPI():
     def __init__(self, server, username, password, proxies, verify):
+        self.debug = False
         self.server = server
         self.username = username
         self.password = password
@@ -96,7 +126,7 @@ class ZabbixAPI():
         cookie = req_cookie.cookies
         if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
             print_message("probably the server in your config file has not full URL (for example "
-                                                "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
+                          "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
         if not cookie:
             print_message("authorization has failed, url: {0}".format(self.server + "/"))
             sys.exit(1)
@@ -104,27 +134,29 @@ class ZabbixAPI():
         self.cookie = cookie
 
     def graph_get(self, itemid, period, title, width, height, tmp_dir):
-        file = tmp_dir + "/{0}.png".format(itemid)
+        file_img = tmp_dir + "/{0}.png".format(itemid)
 
         zbx_img_url = self.server + "/chart3.php?period={1}&name={2}" \
-                           "&width={3}&height={4}&graphtype=0&legend=1" \
-                           "&items[0][itemid]={0}&items[0][sortorder]=0" \
-                           "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
-                                                                                 width, height)
+                                    "&width={3}&height={4}&graphtype=0&legend=1" \
+                                    "&items[0][itemid]={0}&items[0][sortorder]=0" \
+                                    "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
+                                                                                          width, height)
+        if self.debug:
+            print_message(zbx_img_url)
         res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
         res_code = res.status_code
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             sys.exit(1)
         res_img = res._content
-        with open(file, 'wb') as fp:
+        with open(file_img, 'wb') as fp:
             fp.write(res_img)
-        return file
+        return file_img
 
     def api_test(self):
         headers = {'Content-type': 'application/json'}
-        api_data = json.dumps({"jsonrpc": "2.0","method": "user.login","params":
-            {"user": self.username,"password": self.password},"id": 1})
+        api_data = json.dumps({"jsonrpc": "2.0", "method": "user.login", "params":
+                              {"user": self.username, "password": self.password}, "id": 1})
         api_url = self.server + "/api_jsonrpc.php"
         api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
         return api._content
@@ -177,7 +209,7 @@ def main():
     tmp_uids = tmp_dir + "/uids.txt"
     tmp_update = False  # do we need to update cache file with uids or not
 
-    rnd = random.randint(0,999)
+    rnd = random.randint(0, 999)
     ts = time.time()
     hash_ts = str(ts) + "." + str(rnd)
 
@@ -254,12 +286,25 @@ def main():
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py":
         tg_chat = True
 
-    if tg_chat:
+    if "--debug" in sys.argv:
+        is_debug = True
+        tg.debug = True
+        print_message(tg.get_me())
+        print_message("Cache file with uids: " + tmp_uids)
+
+    if tg_chat or "--group" in sys.argv:
         tg.type = "group"
         tg_contact_type_old = "chat"
 
+    if "--markdown" in sys.argv:
+        tg.markdown = True
+
+    if "--html" in sys.argv:
+        tg.html = True
+
     if is_debug:
         log_file = tmp_dir + ".debug." + hash_ts + ".log"
+        #print_message(log_file)
 
     uid = None
 
@@ -287,6 +332,8 @@ def main():
 
     if tmp_update:
         cache_string = "{0};{1};{2}\n".format(zbx_to, tg.type, str(uid).rstrip())
+        if is_debug:
+            print_message("Add new string to cache file: {0}".format(cache_string))
         with open(tmp_uids, "a") as cache_file_uids:
             cache_file_uids.write(cache_string)
 
@@ -294,6 +341,8 @@ def main():
         tg.error_need_to_contact(zbx_to)
         sys.exit(1)
 
+    if is_debug:
+        print_message("Telegram uid of {0} '{1}': {2}".format(tg.type, zbx_to, uid))
 
     # add signature, turned off by default, you can turn it on in config
     try:
@@ -307,14 +356,14 @@ def main():
         tg.send_message(uid, zbxtg_body_text)
     else:
         zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
-                                  settings["zbxtg_image_width"], settings["zbxtg_image_height"],
-                                  tmp_dir)
+                                       settings["zbxtg_image_width"], settings["zbxtg_image_height"],
+                                       tmp_dir)
         zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
         if is_modified:
             print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                                                "the message has been cut to 200 symbols, "
-                                                "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                                                "#issuecomment-166895044")
+                          "the message has been cut to 200 symbols, "
+                          "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
+                          "#issuecomment-166895044")
         if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
             os.remove(zbxtg_file_img)
 
