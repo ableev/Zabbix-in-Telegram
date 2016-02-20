@@ -7,8 +7,14 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
-- [x] You can send them both in private and group chats
+- [x] You can send messages both in private and group chats
 - [x] Saves chatid as a temporary file
+- [x] Simple markdown and HTML are supported
+
+### TODOs
+- Simple zabbix's management via bot's commands
+- Ability to send complex graph or part of screen
+- 
 
 ### Configuration / Installation
 
