@@ -199,12 +199,6 @@ def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
 
-    if not os.path.isdir(tmp_dir):
-        try:
-            os.makedirs(tmp_dir)
-        except:
-            tmp_dir = "/tmp"
-
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
     tmp_update = False  # do we need to update cache file with uids or not
@@ -291,6 +285,19 @@ def main():
         tg.debug = True
         print_message(tg.get_me())
         print_message("Cache file with uids: " + tmp_uids)
+
+    if not os.path.isdir(tmp_dir):
+        if is_debug:
+            print_message("Tmp dir doesn't exist, creating new one...")
+        try:
+            os.makedirs(tmp_dir)
+            os.chmod(tmp_dir, 0777)
+            open(tmp_uids, "a").close()
+            os.chmod(tmp_uids, 0777)
+        except:
+            tmp_dir = "/tmp"
+        if is_debug:
+            print_message("Using {0} as a temporary dir".format(tmp_dir))
 
     if tg_chat or "--group" in sys.argv:
         tg.type = "group"
