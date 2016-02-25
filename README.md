@@ -2,12 +2,14 @@
 Zabbix Notifications with graphs in Telegram
 
 Join us in our **Telegram group** via this link: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
+Subscribe to our channel: https://telegram.me/Zabbix_in_Telegram
 
 Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
 
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
 - [x] You can send messages both in private and group chats
+- [x] Channels support
 - [x] Saves chatid as a temporary file
 - [x] Simple markdown and HTML are supported
 
@@ -52,6 +54,7 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
  * Add the appropriate Media Type to your user
   * The username is **CASE-SENSITIVE**
   * Group chats don't have URLs, so you need to put group's name in media type
+  * Messages for channels should be sent as for private chats
 
   * Private:
 
@@ -69,10 +72,11 @@ zbxtg;graphs_width=700 -- set graphs width (default - 900px)
 zbxtg;graphs_height=300 -- set graphs height (default - 300px)
 zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph title
-zbxtg;debug -- enable debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
+zbxtg;debug -- enables debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
+zbxtg;channel -- enables sending to channels
 ```
 
-You can use markdown in your action: https://core.telegram.org/bots/api#using-markdown (**temporary disabled, some messages with default action text failed to sent due to Telegram's markdown parser**).
+You can use markdown or html formatting in your action: https://core.telegram.org/bots/api#markdown-style + https://core.telegram.org/bots/api#html-style. 
 
 #### Debug
 
@@ -95,4 +99,3 @@ Such captions will be automatically cut to 200 symbols.
 
 #### Zabbix 3.0 
 https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
-
