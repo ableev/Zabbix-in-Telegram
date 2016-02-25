@@ -17,7 +17,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 ### TODOs
 - Simple zabbix's management via bot's commands
 - Ability to send complex graph or part of screen
-- 
+
 
 ### Configuration / Installation
 
