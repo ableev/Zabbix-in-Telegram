@@ -29,6 +29,7 @@ class TelegramAPI():
         self.markdown = False
         self.html = False
         self.disable_web_page_preview = False
+        self.disable_notification = False
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -52,7 +53,8 @@ class TelegramAPI():
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
         message = "\n".join(message)
-        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview}
+        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview,
+                  "disable_notification": self.disable_notification}
         if self.markdown or self.html:
             parse_mode = "HTML"
             if self.markdown:
@@ -74,8 +76,13 @@ class TelegramAPI():
     def send_photo(self, to, message, path):
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
-        params = {"chat_id": to, "caption": message}
+        params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification}
         files = {"photo": open(path, 'rb')}
+        if self.debug:
+            print_message("Trying to /sendPhoto:")
+            print_message(url)
+            print_message(params)
+            print_message("files: " + str(files))
         res = requests.post(url, params=params, files=files, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
@@ -384,12 +391,17 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
                                            settings["zbxtg_image_width"], settings["zbxtg_image_height"],
                                            tmp_dir)
-            zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            tg.send_message(uid, zbxtg_body_text)
+            tg.disable_notification = True
+            zbxtg_body_text = ""
+            """
             if is_modified:
                 print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
                               "the message has been cut to 200 symbols, "
                               "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
                               "#issuecomment-166895044")
+            """
             if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
                 os.remove(zbxtg_file_img)
 
