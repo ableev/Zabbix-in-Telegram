@@ -2,6 +2,7 @@
 Zabbix Notifications with graphs in Telegram
 
 Join us in our **Telegram group** via this link: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
+
 Subscribe to our channel: https://telegram.me/Zabbix_in_Telegram
 
 Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
