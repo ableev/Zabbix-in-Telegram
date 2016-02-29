@@ -31,6 +31,7 @@ class TelegramAPI():
         self.html = False
         self.disable_web_page_preview = False
         self.disable_notification = False
+        self.reply_to_message_id = 0
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -56,6 +57,8 @@ class TelegramAPI():
         message = "\n".join(message)
         params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview,
                   "disable_notification": self.disable_notification}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
         if self.markdown or self.html:
             parse_mode = "HTML"
             if self.markdown:
@@ -78,6 +81,8 @@ class TelegramAPI():
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
         params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
         files = {"photo": open(path, 'rb')}
         if self.debug:
             print_message("Trying to /sendPhoto:")
@@ -393,7 +398,9 @@ def main():
                                            settings["zbxtg_image_width"], settings["zbxtg_image_height"],
                                            tmp_dir)
             #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
-            tg.send_message(uid, zbxtg_body_text)
+            result = tg.send_message(uid, zbxtg_body_text)
+            message_id = result["result"]["message_id"]
+            tg.reply_to_message_id = message_id
             tg.disable_notification = True
             zbxtg_body_text = ""
             """
