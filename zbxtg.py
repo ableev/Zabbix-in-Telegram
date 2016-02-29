@@ -8,6 +8,7 @@ import random
 import requests
 import json
 import re
+import stat
 from os.path import dirname
 import zbxtg_settings
 
@@ -18,7 +19,7 @@ class TelegramAPI():
     def http_get(self, url):
         res = requests.get(url, proxies=self.proxies)
         answer = res._content
-        answer_json = json.loads(answer)
+        answer_json = json.loads(answer.decode('utf8'))
         return answer_json
 
     def __init__(self, key):
@@ -66,7 +67,7 @@ class TelegramAPI():
             print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res._content
-        answer_json = json.loads(answer)
+        answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -85,7 +86,7 @@ class TelegramAPI():
             print_message("files: " + str(files))
         res = requests.post(url, params=params, files=files, proxies=self.proxies)
         answer = res._content
-        answer_json = json.loads(answer)
+        answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -323,9 +324,9 @@ def main():
             print_message("Tmp dir doesn't exist, creating new one...")
         try:
             os.makedirs(tmp_dir)
-            os.chmod(tmp_dir, 0777)
             open(tmp_uids, "a").close()
-            os.chmod(tmp_uids, 0777)
+            os.chmod(tmp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            os.chmod(tmp_uids, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         except:
             tmp_dir = "/tmp"
         if is_debug:
