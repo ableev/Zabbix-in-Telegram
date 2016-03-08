@@ -1,14 +1,17 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import sys
-import os
-import time
-import random
-import requests
 import json
-import re
+import logging
+import os
 from os.path import dirname
+import random
+import re
+import sys
+import time
+
+import requests
+
 import zbxtg_settings
 
 
@@ -62,9 +65,11 @@ class TelegramAPI():
             print_message("Trying to /sendMessage:")
             print_message(url)
             print_message("post params: " + str(params))
+        logging.info("Sending message %s", params)
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
+        logging.info("Receive message %s", answer_json)
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -76,9 +81,11 @@ class TelegramAPI():
         message = "\n".join(message)
         params = {"chat_id": to, "caption": message}
         files = {"photo": open(path, 'rb')}
+        logging.info("Sendig message %s", params)
         res = requests.post(url, params=params, files=files, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
+        logging.info("Receive message %s", answer_json)
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -168,7 +175,7 @@ class ZabbixAPI():
 def print_message(string):
     string = str(string) + "\n"
     filename = sys.argv[0].split("/")[-1]
-    sys.stderr.write(filename + ": " + string)
+    logging.debug(filename + ": " + string)
 
 
 def list_cut(elements, symbols_limit):
@@ -208,9 +215,12 @@ def main():
 
     rnd = random.randint(0, 999)
     ts = time.time()
-    hash_ts = str(ts) + "." + str(rnd)
+    hash_ts = str(ts) + "." + str(rnd) 
 
-    log_file = "/dev/null"
+    log_file = zbxtg_settings.log_file
+    logging.basicConfig(filename=log_file, 
+                        level=logging.getLevelName(zbxtg_settings.log_level), 
+                        format='%(asctime)-15s %(name)-5s %(levelname)-8s %(message)s')
 
     zbx_to = sys.argv[1]
     zbx_subject = sys.argv[2]
@@ -219,6 +229,8 @@ def main():
     tg_contact_type_old = "user"
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
+    
+    logging.debug("Start notify process")
 
     if zbxtg_settings.proxy_to_tg:
         tg.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_tg)}
@@ -373,6 +385,8 @@ def main():
             zbxtg_body_text.append(zbxtg_settings.zbx_server)
     except:
         pass
+    
+    logging.debug("Send message")
 
     if not tg_method_image:
         tg.send_message(uid, zbxtg_body_text)
