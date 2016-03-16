@@ -16,6 +16,7 @@ import zbxtg_settings
 
 log = logging.getLogger('default_logger')
 
+
 class TelegramAPI():
     tg_url_bot_general = "https://api.telegram.org/bot"
 
@@ -28,7 +29,8 @@ class TelegramAPI():
     def __init__(self, key):
         self.key = key
         self.proxies = {}
-        self.type = "private"  # 'private' for private chats or 'group' for group chats
+        # 'private' for private chats or 'group' for group chats
+        self.type = "private"
         self.markdown = False
         self.html = False
         self.disable_web_page_preview = False
@@ -42,8 +44,7 @@ class TelegramAPI():
         url = self.tg_url_bot_general + self.key + "/getUpdates"
         log.debug(url)
         updates = self.http_get(url)
-        log.debug("Content of /getUpdates:")
-        log.debug(updates)
+        log.debug("Content of /getUpdates: %s", updates)
         if not updates["ok"]:
             log.error(updates)
             sys.exit(1)
@@ -53,7 +54,8 @@ class TelegramAPI():
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
         message = "\n".join(message)
-        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview}
+        params = {"chat_id": to, "text": message,
+                  "disable_web_page_preview": self.disable_web_page_preview}
         if self.markdown or self.html:
             parse_mode = "HTML"
             if self.markdown:
@@ -79,7 +81,8 @@ class TelegramAPI():
         params = {"chat_id": to, "caption": message}
         files = {"photo": open(path, 'rb')}
         log.info("Sendig message %s", params)
-        res = requests.post(url, params=params, files=files, proxies=self.proxies)
+        res = requests.post(
+            url, params=params, files=files, proxies=self.proxies)
         answer = res._content
         answer_json = json.loads(answer)
         log.info("Receive message %s", answer_json)
@@ -107,12 +110,15 @@ class TelegramAPI():
 
     def error_need_to_contact(self, to):
         if self.type == "private":
-            log.info("User '{0}' needs to send some text bot in private".format(to))
+            log.info(
+                "User '{0}' needs to send some text bot in private".format(to))
         if self.type == "group":
-            log.info("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
+            log.info(
+                "You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
 
 
 class ZabbixAPI():
+
     def __init__(self, server, username, password):
         self.server = server
         self.username = username
@@ -126,14 +132,17 @@ class ZabbixAPI():
         if not self.verify:
             requests.packages.urllib3.disable_warnings()
 
-        data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
-        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
+        data_api = {
+            "name": self.username, "password": self.password, "enter": "Sign in"}
+        req_cookie = requests.post(
+            self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
         cookie = req_cookie.cookies
         if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
             log.info("probably the server in your config file has not full URL (for example "
-                          "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
+                     "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
         if not cookie:
-            log.info("authorization has failed, url: {0}".format(self.server + "/"))
+            log.info(
+                "authorization has failed, url: {0}".format(self.server + "/"))
             cookie = None
 
         self.cookie = cookie
@@ -147,7 +156,8 @@ class ZabbixAPI():
                                     "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
                                                                                           width, height)
         log.debug(zbx_img_url)
-        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
+        res = requests.get(
+            zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
         res_code = res.status_code
         if res_code == 404:
             log.error("can't get image from '{0}'".format(zbx_img_url))
@@ -160,10 +170,12 @@ class ZabbixAPI():
     def api_test(self):
         headers = {'Content-type': 'application/json'}
         api_data = json.dumps({"jsonrpc": "2.0", "method": "user.login", "params":
-                              {"user": self.username, "password": self.password}, "id": 1})
+                               {"user": self.username, "password": self.password}, "id": 1})
         api_url = self.server + "/api_jsonrpc.php"
-        api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
+        api = requests.post(
+            api_url, data=api_data, proxies=self.proxies, headers=headers)
         return api._content
+
 
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
@@ -203,7 +215,7 @@ def main():
     rnd = random.randint(0, 999)
     ts = time.time()
     hash_ts = str(ts) + "." + str(rnd)
-    
+
     zbx_to = sys.argv[1]
     zbx_subject = sys.argv[2]
     zbx_body = sys.argv[3]
@@ -211,17 +223,18 @@ def main():
     tg_contact_type_old = "user"
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
-    
+
     log_level = logging.getLevelName(zbxtg_settings.log_level)
     log_file = zbxtg_settings.log_file
-    format = logging.Formatter('%(asctime)-15s [%(name)-5s] [%(levelname)-8s] %(message)s')
-    
+    format = logging.Formatter(
+        '%(asctime)-15s [%(name)-5s] [%(levelname)-8s] %(message)s')
+
     fh = logging.FileHandler(log_file)
     fh.setFormatter(format)
-    
+
     log.setLevel(log_level)
     log.addHandler(fh)
-    
+
     log.debug("Start notify process")
 
     if zbxtg_settings.proxy_to_tg:
@@ -231,7 +244,8 @@ def main():
                     password=zbxtg_settings.zbx_api_pass)
 
     if zbxtg_settings.proxy_to_zbx:
-        zbx.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
+        zbx.proxies = {
+            "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
 
     try:
         zbx_api_verify = zbxtg_settings.zbx_api_verify
@@ -248,7 +262,8 @@ def main():
         "zbxtg_image_period": "3600",
         "zbxtg_image_width": "900",
         "zbxtg_image_height": "200",
-        "tg_method_image": False,  # if True - default send images, False - send text
+        # if True - default send images, False - send text
+        "tg_method_image": False,
         "tg_chat": False,  # send message to chat or in private
         "is_debug": False,
         "is_channel": False,
@@ -286,7 +301,8 @@ def main():
     is_channel = bool(settings["is_channel"])
     disable_web_page_preview = bool(settings["disable_web_page_preview"])
 
-    # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
+    # experimental way to send message to the group
+    # https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat:
         tg_chat = True
         tg.type = "group"
@@ -358,7 +374,8 @@ def main():
         sys.exit(1)
 
     if tmp_need_update:
-        cache_string = "{0};{1};{2}\n".format(zbx_to, tg.type, str(uid).rstrip())
+        cache_string = "{0};{1};{2}\n".format(
+            zbx_to, tg.type, str(uid).rstrip())
         log.debug("Add new string to cache file: {0}".format(cache_string))
         with open(tmp_uids, "a") as cache_file_uids:
             cache_file_uids.write(cache_string)
@@ -372,7 +389,7 @@ def main():
             zbxtg_body_text.append(zbxtg_settings.zbx_server)
     except:
         pass
-    
+
     log.debug("Send message")
 
     if not tg_method_image:
@@ -383,14 +400,15 @@ def main():
             log.info("Login to Zabbix web UI has failed, check manually...")
         else:
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
-                                           settings["zbxtg_image_width"], settings["zbxtg_image_height"],
+                                           settings["zbxtg_image_width"], settings[
+                                               "zbxtg_image_height"],
                                            tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             if is_modified:
                 log.info("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                              "the message has been cut to 200 symbols, "
-                              "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                              "#issuecomment-166895044")
+                         "the message has been cut to 200 symbols, "
+                         "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
+                         "#issuecomment-166895044")
             if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
                 os.remove(zbxtg_file_img)
 
