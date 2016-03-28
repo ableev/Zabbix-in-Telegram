@@ -18,7 +18,7 @@ class TelegramAPI():
 
     def http_get(self, url):
         res = requests.get(url, proxies=self.proxies)
-        answer = res._content
+        answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
         return answer_json
 
@@ -69,7 +69,7 @@ class TelegramAPI():
             print_message(url)
             print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res._content
+        answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
@@ -90,7 +90,7 @@ class TelegramAPI():
             print_message(params)
             print_message("files: " + str(files))
         res = requests.post(url, params=params, files=files, proxies=self.proxies)
-        answer = res._content
+        answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
@@ -164,7 +164,7 @@ class ZabbixAPI():
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             sys.exit(1)
-        res_img = res._content
+        res_img = res.text
         with open(file_img, 'wb') as fp:
             fp.write(res_img)
         return file_img
@@ -175,7 +175,7 @@ class ZabbixAPI():
                               {"user": self.username, "password": self.password}, "id": 1})
         api_url = self.server + "/api_jsonrpc.php"
         api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
-        return api._content
+        return api.text
 
 
 def print_message(string):
