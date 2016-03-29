@@ -164,7 +164,7 @@ class ZabbixAPI():
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             sys.exit(1)
-        res_img = res.text
+        res_img = res.content
         with open(file_img, 'wb') as fp:
             fp.write(res_img)
         return file_img
