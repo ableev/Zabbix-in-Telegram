@@ -214,7 +214,7 @@ def main():
 
     zbx_to = sys.argv[1]
     zbx_subject = sys.argv[2]
-    zbx_body = sys.argv[3]
+    zbx_body = sys.argv[3].decode("string_escape")
 
     tg_contact_type_old = "user"
 
