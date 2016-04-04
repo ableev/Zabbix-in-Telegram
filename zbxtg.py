@@ -234,13 +234,19 @@ def main():
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
     if zbxtg_settings.proxy_to_tg:
-        tg.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_tg)}
+        tg.proxies = {
+            "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
+            "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
+            }
 
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
 
     if zbxtg_settings.proxy_to_zbx:
-        zbx.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
+        zbx.proxies = {
+            "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
+            "https": "https://{0}/".format(zbxtg_settings.proxy_to_zbx)
+            }
 
     try:
         zbx_api_verify = zbxtg_settings.zbx_api_verify
