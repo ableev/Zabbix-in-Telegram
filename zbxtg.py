@@ -8,6 +8,7 @@ import random
 import requests
 import json
 import re
+import stat
 from os.path import dirname
 import zbxtg_settings
 
@@ -17,8 +18,8 @@ class TelegramAPI():
 
     def http_get(self, url):
         res = requests.get(url, proxies=self.proxies)
-        answer = res._content
-        answer_json = json.loads(answer)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
         return answer_json
 
     def __init__(self, key):
@@ -29,6 +30,8 @@ class TelegramAPI():
         self.markdown = False
         self.html = False
         self.disable_web_page_preview = False
+        self.disable_notification = False
+        self.reply_to_message_id = 0
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -52,7 +55,10 @@ class TelegramAPI():
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
         message = "\n".join(message)
-        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview}
+        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview,
+                  "disable_notification": self.disable_notification}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
         if self.markdown or self.html:
             parse_mode = "HTML"
             if self.markdown:
@@ -63,8 +69,8 @@ class TelegramAPI():
             print_message(url)
             print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res._content
-        answer_json = json.loads(answer)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -74,11 +80,18 @@ class TelegramAPI():
     def send_photo(self, to, message, path):
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
-        params = {"chat_id": to, "caption": message}
+        params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
         files = {"photo": open(path, 'rb')}
+        if self.debug:
+            print_message("Trying to /sendPhoto:")
+            print_message(url)
+            print_message(params)
+            print_message("files: " + str(files))
         res = requests.post(url, params=params, files=files, proxies=self.proxies)
-        answer = res._content
-        answer_json = json.loads(answer)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
             sys.exit(1)
@@ -151,7 +164,7 @@ class ZabbixAPI():
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             sys.exit(1)
-        res_img = res._content
+        res_img = res.content
         with open(file_img, 'wb') as fp:
             fp.write(res_img)
         return file_img
@@ -162,7 +175,7 @@ class ZabbixAPI():
                               {"user": self.username, "password": self.password}, "id": 1})
         api_url = self.server + "/api_jsonrpc.php"
         api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
-        return api._content
+        return api.text
 
 
 def print_message(string):
@@ -221,13 +234,19 @@ def main():
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
     if zbxtg_settings.proxy_to_tg:
-        tg.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_tg)}
+        tg.proxies = {
+            "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
+            "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
+            }
 
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
 
     if zbxtg_settings.proxy_to_zbx:
-        zbx.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
+        zbx.proxies = {
+            "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
+            "https": "https://{0}/".format(zbxtg_settings.proxy_to_zbx)
+            }
 
     try:
         zbx_api_verify = zbxtg_settings.zbx_api_verify
@@ -316,9 +335,9 @@ def main():
             print_message("Tmp dir doesn't exist, creating new one...")
         try:
             os.makedirs(tmp_dir)
-            os.chmod(tmp_dir, 0777)
             open(tmp_uids, "a").close()
-            os.chmod(tmp_uids, 0777)
+            os.chmod(tmp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            os.chmod(tmp_uids, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         except:
             tmp_dir = "/tmp"
         if is_debug:
@@ -384,12 +403,19 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
                                            settings["zbxtg_image_width"], settings["zbxtg_image_height"],
                                            tmp_dir)
-            zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            result = tg.send_message(uid, zbxtg_body_text)
+            message_id = result["result"]["message_id"]
+            tg.reply_to_message_id = message_id
+            tg.disable_notification = True
+            zbxtg_body_text = ""
+            """
             if is_modified:
                 print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
                               "the message has been cut to 200 symbols, "
                               "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
                               "#issuecomment-166895044")
+            """
             if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
                 os.remove(zbxtg_file_img)
 
