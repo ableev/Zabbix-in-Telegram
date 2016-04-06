@@ -109,10 +109,11 @@ class TelegramAPI():
                 if "username" in chat:
                     if chat["username"] == name:
                         uid = chat["id"]
-            if chat["type"] == self.type == "group":
-                if "title" in chat:
-                    if chat["title"] == name.decode("utf-8"):
-                        uid = chat["id"]
+            if self.type == "group":
+                if chat["type"] == "group" or chat["type"] == "supergroup":
+                    if "title" in chat:
+                        if chat["title"] == name.decode("utf-8"):
+                            uid = chat["id"]                
         return uid
 
     def error_need_to_contact(self, to):
