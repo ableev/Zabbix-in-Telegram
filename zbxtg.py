@@ -254,15 +254,6 @@ def main():
     except:
         pass
 
-    pattern_ok = re.compile(zbxtg_settings.regex_ok)
-    pattern_ko = re.compile(zbxtg_settings.regex_ko)
-
-    if pattern_ok.match(zbx_subject):
-      zbx_subject = zbxtg_settings.ok_emoji + " " + zbx_subject
-    elif pattern_ko.match(zbx_subject):
-      zbx_subject = zbxtg_settings.ko_emoji + " " + zbx_subject
-    else: 
-      zbx_subject = zbxtg_settings.info_emoji + " " + zbx_subject
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
@@ -272,7 +263,13 @@ def main():
         "zbxtg_image_period": "3600",
         "zbxtg_image_width": "900",
         "zbxtg_image_height": "200",
+        "zbxtg_ok_emoji": "✅",
+        "zbxtg_ko_emoji": "⚠",
+        "zbxtg_info_emoji": "ℹ",
+        "zbxtg_ok_str": "OK",
+        "zbxtg_ko_str": "PROBLEM",
         "tg_method_image": False,  # if True - default send images, False - send text
+        "tg_method_emoji": False, # if True - send emojis, False - do not send emojis
         "tg_chat": False,  # send message to chat or in private
         "is_debug": False,
         "is_channel": False,
@@ -284,7 +281,13 @@ def main():
         "graphs_period": {"name": "zbxtg_image_period", "type": "int"},
         "graphs_width": {"name": "zbxtg_image_width", "type": "int"},
         "graphs_height": {"name": "zbxtg_image_height", "type": "int"},
+        "ok_emoji": {"name": "zbxtg_ok_emoji", "type": "str"},
+        "ko_emoji": {"name": "zbxtg_ko_emoji", "type": "str"},
+        "info_emoji": {"name": "zbxtg_info_emoji", "type": "str"},
+        "regex_ok": {"name": "zbxtg_ok_str", "type": "str"},
+        "regex_ko": {"name": "zbxtg_ko_str", "type": "str"},
         "graphs": {"name": "tg_method_image", "type": "bool"},
+        "emojis": {"name": "tg_method_emoji", "type": "bool"},
         "chat": {"name": "tg_chat", "type": "bool"},
         "debug": {"name": "is_debug", "type": "bool"},
         "channel": {"name": "is_channel", "type": "bool"},
@@ -305,6 +308,7 @@ def main():
             zbxtg_body_text.append(line)
 
     tg_method_image = bool(settings["tg_method_image"])
+    tg_method_emoji =  bool(settings["tg_method_emoji"])
     tg_chat = bool(settings["tg_chat"])
     is_debug = bool(settings["is_debug"])
     is_channel = bool(settings["is_channel"])
@@ -401,6 +405,19 @@ def main():
             zbxtg_body_text.append(zbxtg_settings.zbx_server)
     except:
         pass
+
+    if tg_method_emoji:
+        print "test"
+        pattern_ok = re.compile(settings["zbxtg_ok_str"])
+        pattern_ko = re.compile(settings["zbxtg_ko_str"])
+        if pattern_ok.match(zbx_subject):
+            emoji = settings["zbxtg_ok_emoji"]
+        elif pattern_ko.match(zbx_subject):
+            emoji = settings["zbxtg_ko_emoji"]
+        else:
+            emoji = settings["zbxtg_info_emoji"]
+
+        zbxtg_body_text[0] = emoji + " " + zbxtg_body_text[0]
 
     if not tg_method_image:
         tg.send_message(uid, zbxtg_body_text)
