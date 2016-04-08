@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 tg_key = "XYZ"  # telegram bot api key
 
 zbx_tg_prefix = "zbxtg"  # variable for separating text from script info
@@ -11,6 +13,13 @@ zbx_api_verify = True  # True - do not ignore self signed certificates, False - 
 
 proxy_to_zbx = None
 proxy_to_tg = None
+
+regex_ok = "OK"
+regex_ko "PROBLEM"
+
+ok_emoji = "✅"
+ko_emoji = "⚠"
+info_emoji = "ℹ"
 
 #proxy_to_zbx = "proxy.local:3128"
 #proxy_to_tg = "proxy.local:3128"

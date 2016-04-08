@@ -254,6 +254,15 @@ def main():
     except:
         pass
 
+    pattern_ok = re.compile(zbxtg_settings.regex_ok)
+    pattern_ko = re.compile(zbxtg_settings.regex_ko)
+
+    if pattern_ok.match(zbx_subject):
+      zbx_subject = zbxtg_settings.ok_emoji + " " + zbx_subject
+    elif pattern_ko.match(zbx_subject):
+      zbx_subject = zbxtg_settings.ko_emoji + " " + zbx_subject
+    else: 
+      zbx_subject = zbxtg_settings.info_emoji + " " + zbx_subject
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
