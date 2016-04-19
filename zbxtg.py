@@ -32,6 +32,7 @@ class TelegramAPI():
         self.disable_web_page_preview = False
         self.disable_notification = False
         self.reply_to_message_id = 0
+        self.tmp_uids = None
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -48,7 +49,7 @@ class TelegramAPI():
             print_message(updates)
         if not updates["ok"]:
             print_message(updates)
-            sys.exit(1)
+            return updates
         else:
             return updates
 
@@ -73,7 +74,7 @@ class TelegramAPI():
         answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
-            sys.exit(1)
+            return answer_json
         else:
             return answer_json
 
@@ -94,7 +95,7 @@ class TelegramAPI():
         answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
-            sys.exit(1)
+            return answer_json
         else:
             return answer_json
 
@@ -109,7 +110,7 @@ class TelegramAPI():
                 if "username" in chat:
                     if chat["username"] == name:
                         uid = chat["id"]
-            if chat["type"] == self.type == "group":
+            if (chat["type"] == "group" or chat["type"] == "supergroup") and self.type == "group":
                 if "title" in chat:
                     if chat["title"] == name.decode("utf-8"):
                         uid = chat["id"]
@@ -120,6 +121,27 @@ class TelegramAPI():
             print_message("User '{0}' needs to send some text bot in private".format(to))
         if self.type == "group":
             print_message("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
+
+    def update_cache_uid(self, name, uid, message="Add new string to cache file"):
+        cache_string = "{0};{1};{2}\n".format(name, self.type, str(uid).rstrip())
+        # FIXME
+        if self.debug:
+            print_message("{0}: {1}".format(message, cache_string))
+        with open(self.tmp_uids, "a") as cache_file_uids:
+            cache_file_uids.write(cache_string)
+
+    def get_uid_from_cache(self, name):
+        uid = 0
+        if os.path.isfile(self.tmp_uids):
+            with open(self.tmp_uids, 'r') as cache_file_uids:
+                cache_uids_old = cache_file_uids.readlines()
+
+            for u in cache_uids_old:
+                u_splitted = u.split(";")
+                if name == u_splitted[0] and self.type == u_splitted[1]:
+                    uid = u_splitted[2]
+
+        return uid
 
 
 class ZabbixAPI():
@@ -163,7 +185,7 @@ class ZabbixAPI():
         res_code = res.status_code
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
-            sys.exit(1)
+            return False
         res_img = res.content
         with open(file_img, 'wb') as fp:
             fp.write(res_img)
@@ -229,9 +251,9 @@ def main():
     zbx_subject = sys.argv[2]
     zbx_body = sys.argv[3]
 
-    tg_contact_type_old = "user"
-
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
+
+    tg.tmp_uids = tmp_uids
 
     if zbxtg_settings.proxy_to_tg:
         tg.proxies = {
@@ -305,14 +327,13 @@ def main():
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat:
         tg_chat = True
         tg.type = "group"
-        tg_contact_type_old = "chat"
 
     if "--debug" in sys.argv or is_debug:
         is_debug = True
         tg.debug = True
         zbx.debug = True
         print_message(tg.get_me())
-        print_message("Cache file with uids: " + tmp_uids)
+        print_message("Cache file with uids: " + tg.tmp_uids)
         log_file = tmp_dir + ".debug." + hash_ts + ".log"
         #print_message(log_file)
 
@@ -335,9 +356,9 @@ def main():
             print_message("Tmp dir doesn't exist, creating new one...")
         try:
             os.makedirs(tmp_dir)
-            open(tmp_uids, "a").close()
+            open(tg.tmp_uids, "a").close()
             os.chmod(tmp_dir, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
-            os.chmod(tmp_uids, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
+            os.chmod(tg.tmp_uids, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         except:
             tmp_dir = "/tmp"
         if is_debug:
@@ -350,22 +371,8 @@ def main():
     else:
         zbx_to = zbx_to.replace("@", "")
 
-    if os.path.isfile(tmp_uids):
-        with open(tmp_uids, 'r') as cache_file_uids:
-            cache_uids_old = cache_file_uids.readlines()
-
-        for u in cache_uids_old:
-            u_splitted = u.split(";")
-            if zbx_to == u_splitted[0] and tg.type == u_splitted[1]:
-                uid = u_splitted[2]
-
-        if not uid:
-            for u in cache_uids_old:
-                u_splitted = u.split(";")
-                if zbx_to == u_splitted[0] and tg_contact_type_old == u_splitted[1]:
-                    uid = u_splitted[2]
-            if uid:
-                tmp_need_update = True
+    if not uid:
+        uid = tg.get_uid_from_cache(zbx_to)
 
     if not uid:
         uid = tg.get_uid(zbx_to)
@@ -376,11 +383,7 @@ def main():
         sys.exit(1)
 
     if tmp_need_update:
-        cache_string = "{0};{1};{2}\n".format(zbx_to, tg.type, str(uid).rstrip())
-        if is_debug:
-            print_message("Add new string to cache file: {0}".format(cache_string))
-        with open(tmp_uids, "a") as cache_file_uids:
-            cache_file_uids.write(cache_string)
+        tg.update_cache_uid(zbx_to, str(uid).rstrip())
 
     if is_debug:
         print_message("Telegram uid of {0} '{1}': {2}".format(tg.type, zbx_to, uid))
@@ -394,7 +397,13 @@ def main():
         pass
 
     if not tg_method_image:
-        tg.send_message(uid, zbxtg_body_text)
+        result = tg.send_message(uid, zbxtg_body_text)
+        if not result["ok"]:
+            if result["description"] == "[Error]: Bad Request: group chat is migrated to supergroup chat":
+                migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
+                tg.update_cache_uid(zbx_to, uid, message="Group chat is migrated to supergroup, updating cache file")
+                uid = migrate_to_chat_id
+                result = tg.send_message(uid, zbxtg_body_text)
     else:
         zbx.login()
         if not zbx.cookie:
@@ -408,16 +417,21 @@ def main():
             message_id = result["result"]["message_id"]
             tg.reply_to_message_id = message_id
             tg.disable_notification = True
-            zbxtg_body_text = ""
-            """
-            if is_modified:
-                print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                              "the message has been cut to 200 symbols, "
-                              "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                              "#issuecomment-166895044")
-            """
-            if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
-                os.remove(zbxtg_file_img)
+            if not zbxtg_file_img:
+                tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
+                print_message("Can't get image, check URL manually")
+            else:
+
+                zbxtg_body_text = ""
+                """
+                if is_modified:
+                    print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
+                                  "the message has been cut to 200 symbols, "
+                                  "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
+                                  "#issuecomment-166895044")
+                """
+                if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
+                    os.remove(zbxtg_file_img)
 
 
 if __name__ == "__main__":
