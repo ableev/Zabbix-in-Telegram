@@ -396,6 +396,16 @@ def main():
     except:
         pass
 
+    # replace text with emojis
+    if hasattr(zbxtg_settings, "emoji_map"):
+        zbxtg_body_text_emoji_support = []
+        for l in zbxtg_body_text:
+            l_new = l
+            for k, v in zbxtg_settings.emoji_map.iteritems():
+                l_new = l_new.replace("{{" + k + "}}", v)
+            zbxtg_body_text_emoji_support.append(l_new)
+        zbxtg_body_text = zbxtg_body_text_emoji_support
+
     if not tg_method_image:
         result = tg.send_message(uid, zbxtg_body_text)
         if not result["ok"]:
