@@ -174,6 +174,8 @@ class ZabbixAPI():
     def graph_get(self, itemid, period, title, width, height, tmp_dir):
         file_img = tmp_dir + "/{0}.png".format(itemid)
 
+        title = requests.utils.quote(title)
+
         zbx_img_url = self.server + "/chart3.php?period={1}&name={2}" \
                                     "&width={3}&height={4}&graphtype=0&legend=1" \
                                     "&items[0][itemid]={0}&items[0][sortorder]=0" \
@@ -419,9 +421,9 @@ def main():
         if not zbx.cookie:
             print_message("Login to Zabbix web UI has failed, check manually...")
         else:
-            zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"], settings["zbxtg_title"],
-                                           settings["zbxtg_image_width"], settings["zbxtg_image_height"],
-                                           tmp_dir)
+            zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
+                                           settings["zbxtg_title"], settings["zbxtg_image_width"],
+                                           settings["zbxtg_image_height"], tmp_dir)
             #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             result = tg.send_message(uid, zbxtg_body_text)
             message_id = result["result"]["message_id"]
