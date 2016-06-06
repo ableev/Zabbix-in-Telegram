@@ -105,7 +105,10 @@ class TelegramAPI():
             print_message("Getting uid from /getUpdates...")
         updates = self.get_updates()
         for m in updates["result"]:
-            chat = m["message"]["chat"]
+            if "message" in chat:
+                chat = m["message"]["chat"]
+            elif "edited_message" in chat:
+                chat = m["edited_message"]["chat"]
             if chat["type"] == self.type == "private":
                 if "username" in chat:
                     if chat["username"] == name:
