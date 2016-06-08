@@ -424,7 +424,6 @@ def main():
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, updating cache file")
                 uid = migrate_to_chat_id
                 result = tg.send_message(uid, zbxtg_body_text)
-        print result
     else:
         zbx.login()
         if not zbx.cookie:
