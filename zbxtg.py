@@ -292,6 +292,7 @@ def main():
         "zbxtg_image_height": "200",
         "tg_method_image": False,  # if True - default send images, False - send text
         "tg_chat": False,  # send message to chat or in private
+        "tg_group": False,  # send message to chat or in private
         "is_debug": False,
         "is_channel": False,
         "disable_web_page_preview": False,
@@ -304,6 +305,7 @@ def main():
         "graphs_height": {"name": "zbxtg_image_height", "type": "int"},
         "graphs": {"name": "tg_method_image", "type": "bool"},
         "chat": {"name": "tg_chat", "type": "bool"},
+        "group": {"name": "tg_group", "type": "bool"},
         "debug": {"name": "is_debug", "type": "bool"},
         "channel": {"name": "is_channel", "type": "bool"},
         "disable_web_page_preview": {"name": "disable_web_page_preview", "type": "bool"},
@@ -324,13 +326,15 @@ def main():
 
     tg_method_image = bool(settings["tg_method_image"])
     tg_chat = bool(settings["tg_chat"])
+    tg_group = bool(settings["tg_group"])
     is_debug = bool(settings["is_debug"])
     is_channel = bool(settings["is_channel"])
     disable_web_page_preview = bool(settings["disable_web_page_preview"])
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
-    if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat:
+    if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
         tg_chat = True
+        tg_group = True
         tg.type = "group"
 
     if "--debug" in sys.argv or is_debug:
@@ -414,11 +418,13 @@ def main():
     if not tg_method_image:
         result = tg.send_message(uid, zbxtg_body_text)
         if not result["ok"]:
-            if result["description"] == "[Error]: Bad Request: group chat is migrated to supergroup chat":
+            if result["description"].find("migrated") > -1 and result["description"].find("supergroup") > -1:
+
                 migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
-                tg.update_cache_uid(zbx_to, uid, message="Group chat is migrated to supergroup, updating cache file")
+                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, updating cache file")
                 uid = migrate_to_chat_id
                 result = tg.send_message(uid, zbxtg_body_text)
+        print result
     else:
         zbx.login()
         if not zbx.cookie:
