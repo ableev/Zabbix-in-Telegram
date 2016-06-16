@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 tg_key = "XYZ"  # telegram bot api key
 
 zbx_tg_prefix = "zbxtg"  # variable for separating text from script info
@@ -17,3 +19,14 @@ log_level = "DEBUG"
 
 #proxy_to_zbx = "proxy.local:3128"
 #proxy_to_tg = "proxy.local:3128"
+
+emoji_map = {
+    "ok": "✅",
+    "problem": "❗",
+    "info": "ℹ️",
+    "warning": "⚠️",
+    "disaster": "❌",
+    "bomb": "💣",
+    "fire": "🔥",
+    "hankey": "💩",
+}

@@ -1,7 +1,7 @@
 # Zabbix-in-Telegram
 Zabbix Notifications with graphs in Telegram
 
-Join us in our **Telegram group** via this link: https://telegram.me/joinchat/AGnFigJ_NW75IGNnpOyjig
+Join us in our **Telegram group** via this link: https://telegram.me/ZbxTg
 
 Subscribe to our channel: https://telegram.me/Zabbix_in_Telegram
 
@@ -13,6 +13,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 - [x] Channels support
 - [x] Saves chatid as a temporary file
 - [x] Simple markdown and HTML are supported
+- [x] Emoji in messages
 
 ### TODOs
 - Simple zabbix's management via bot's commands
