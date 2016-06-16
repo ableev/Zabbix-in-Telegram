@@ -1,16 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-import sys
-import os
-import time
-import random
-import requests
 import json
+import logging
+import os
+import random
 import re
+import sys
+import time
 import stat
 from os.path import dirname
+
+import requests
+
 import zbxtg_settings
+
+log = logging.getLogger('default_logger')
 
 
 class TelegramAPI():
@@ -23,10 +28,10 @@ class TelegramAPI():
         return answer_json
 
     def __init__(self, key):
-        self.debug = False
         self.key = key
         self.proxies = {}
-        self.type = "private"  # 'private' for private chats or 'group' for group chats
+        # 'private' for private chats or 'group' for group chats
+        self.type = "private"
         self.markdown = False
         self.html = False
         self.disable_web_page_preview = False
@@ -41,14 +46,11 @@ class TelegramAPI():
 
     def get_updates(self):
         url = self.tg_url_bot_general + self.key + "/getUpdates"
-        if self.debug:
-            print_message(url)
+        log.debug(url)
         updates = self.http_get(url)
-        if self.debug:
-            print_message("Content of /getUpdates:")
-            print_message(updates)
+        log.debug("Content of /getUpdates: %s", updates)
         if not updates["ok"]:
-            print_message(updates)
+            log.error(updates)
             return updates
         else:
             return updates
@@ -56,7 +58,8 @@ class TelegramAPI():
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
         message = "\n".join(message)
-        params = {"chat_id": to, "text": message, "disable_web_page_preview": self.disable_web_page_preview,
+        params = {"chat_id": to, "text": message,
+                  "disable_web_page_preview": self.disable_web_page_preview,
                   "disable_notification": self.disable_notification}
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
@@ -65,15 +68,16 @@ class TelegramAPI():
             if self.markdown:
                 parse_mode = "Markdown"
             params["parse_mode"] = parse_mode
-        if self.debug:
-            print_message("Trying to /sendMessage:")
-            print_message(url)
-            print_message("post params: " + str(params))
+        log.debug("Trying to /sendMessage:")
+        log.debug(url)
+        log.debug("post params: " + str(params))
+        log.info("Sending message %s", params)
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
+        log.info("Receive message %s", answer_json)
         if not answer_json["ok"]:
-            print_message(answer_json)
+            log.error(answer_json)
             return answer_json
         else:
             return answer_json
@@ -85,24 +89,25 @@ class TelegramAPI():
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
         files = {"photo": open(path, 'rb')}
-        if self.debug:
-            print_message("Trying to /sendPhoto:")
-            print_message(url)
-            print_message(params)
-            print_message("files: " + str(files))
-        res = requests.post(url, params=params, files=files, proxies=self.proxies)
+        log.debug("Trying to /sendPhoto:")
+        log.debug(url)
+        log.debug(params)
+        log.debug("files: " + str(files))
+        log.info("Sending message %s", params)
+        res = requests.post(
+            url, params=params, files=files, proxies=self.proxies)
         answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
+        log.info("Receive message %s", answer_json)
         if not answer_json["ok"]:
-            print_message(answer_json)
+            log.error(answer_json)
             return answer_json
         else:
             return answer_json
 
     def get_uid(self, name):
         uid = 0
-        if self.debug:
-            print_message("Getting uid from /getUpdates...")
+        log.debug("Getting uid from /getUpdates...")
         updates = self.get_updates()
         for m in updates["result"]:
             if "message" in m:
@@ -121,15 +126,16 @@ class TelegramAPI():
 
     def error_need_to_contact(self, to):
         if self.type == "private":
-            print_message("User '{0}' needs to send some text bot in private".format(to))
+            log.info(
+                "User '{0}' needs to send some text bot in private".format(to))
         if self.type == "group":
-            print_message("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
+            log.info(
+                "You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
 
     def update_cache_uid(self, name, uid, message="Add new string to cache file"):
         cache_string = "{0};{1};{2}\n".format(name, self.type, str(uid).rstrip())
         # FIXME
-        if self.debug:
-            print_message("{0}: {1}".format(message, cache_string))
+        log.debug("{0}: {1}".format(message, cache_string))
         with open(self.tmp_uids, "a") as cache_file_uids:
             cache_file_uids.write(cache_string)
 
@@ -148,8 +154,8 @@ class TelegramAPI():
 
 
 class ZabbixAPI():
+
     def __init__(self, server, username, password):
-        self.debug = False
         self.server = server
         self.username = username
         self.password = password
@@ -162,14 +168,17 @@ class ZabbixAPI():
         if not self.verify:
             requests.packages.urllib3.disable_warnings()
 
-        data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
-        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
+        data_api = {
+            "name": self.username, "password": self.password, "enter": "Sign in"}
+        req_cookie = requests.post(
+            self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
         cookie = req_cookie.cookies
         if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
-            print_message("probably the server in your config file has not full URL (for example "
-                          "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
+            log.info("probably the server in your config file has not full URL (for example "
+                     "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
         if not cookie:
-            print_message("authorization has failed, url: {0}".format(self.server + "/"))
+            log.info(
+                "authorization has failed, url: {0}".format(self.server + "/"))
             cookie = None
 
         self.cookie = cookie
@@ -184,12 +193,12 @@ class ZabbixAPI():
                                     "&items[0][itemid]={0}&items[0][sortorder]=0" \
                                     "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
                                                                                           width, height)
-        if self.debug:
-            print_message(zbx_img_url)
-        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
+        log.debug(zbx_img_url)
+        res = requests.get(
+            zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
         res_code = res.status_code
         if res_code == 404:
-            print_message("can't get image from '{0}'".format(zbx_img_url))
+            log.error("can't get image from '{0}'".format(zbx_img_url))
             return False
         res_img = res.content
         with open(file_img, 'wb') as fp:
@@ -199,16 +208,11 @@ class ZabbixAPI():
     def api_test(self):
         headers = {'Content-type': 'application/json'}
         api_data = json.dumps({"jsonrpc": "2.0", "method": "user.login", "params":
-                              {"user": self.username, "password": self.password}, "id": 1})
+                               {"user": self.username, "password": self.password}, "id": 1})
         api_url = self.server + "/api_jsonrpc.php"
-        api = requests.post(api_url, data=api_data, proxies=self.proxies, headers=headers)
+        api = requests.post(
+            api_url, data=api_data, proxies=self.proxies, headers=headers)
         return api.text
-
-
-def print_message(string):
-    string = str(string) + "\n"
-    filename = sys.argv[0].split("/")[-1]
-    sys.stderr.write(filename + ": " + string)
 
 
 def list_cut(elements, symbols_limit):
@@ -250,14 +254,25 @@ def main():
     ts = time.time()
     hash_ts = str(ts) + "." + str(rnd)
 
-    log_file = "/dev/null"
-
     zbx_to = sys.argv[1]
     zbx_subject = sys.argv[2]
     zbx_body = sys.argv[3]
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
+    log_level = logging.getLevelName(zbxtg_settings.log_level)
+    log_file = zbxtg_settings.log_file
+    format = logging.Formatter(
+        '%(asctime)-15s [%(name)-5s] [%(levelname)-8s] %(message)s')
+
+    fh = logging.FileHandler(log_file)
+    fh.setFormatter(format)
+
+    log.setLevel(log_level)
+    log.addHandler(fh)
+
+    log.debug("Start notify process")
+    
     tg.tmp_uids = tmp_uids
 
     if zbxtg_settings.proxy_to_tg:
@@ -290,7 +305,8 @@ def main():
         "zbxtg_image_period": "3600",
         "zbxtg_image_width": "900",
         "zbxtg_image_height": "200",
-        "tg_method_image": False,  # if True - default send images, False - send text
+        # if True - default send images, False - send text
+        "tg_method_image": False,
         "tg_chat": False,  # send message to chat or in private
         "tg_group": False,  # send message to chat or in private
         "is_debug": False,
@@ -339,12 +355,12 @@ def main():
 
     if "--debug" in sys.argv or is_debug:
         is_debug = True
-        tg.debug = True
-        zbx.debug = True
-        print_message(tg.get_me())
-        print_message("Cache file with uids: " + tg.tmp_uids)
-        log_file = tmp_dir + ".debug." + hash_ts + ".log"
-        #print_message(log_file)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setFormatter(format)
+        log.addHandler(ch)
+        log.debug(tg.get_me())
+        log.debug("Cache file with uids: " + tmp_uids)
+        log.setLevel(logging.DEBUG)
 
     if "--markdown" in sys.argv:
         tg.markdown = True
@@ -356,13 +372,11 @@ def main():
         tg.type = "channel"
 
     if "--disable_web_page_preview" in sys.argv or disable_web_page_preview:
-        if is_debug:
-            print_message("'disable_web_page_preview' option has been enabled")
+        log.debug("'disable_web_page_preview' option has been enabled")
         tg.disable_web_page_preview = True
 
     if not os.path.isdir(tmp_dir):
-        if is_debug:
-            print_message("Tmp dir doesn't exist, creating new one...")
+        log.debug("Tmp dir doesn't exist, creating new one...")
         try:
             os.makedirs(tmp_dir)
             open(tg.tmp_uids, "a").close()
@@ -370,8 +384,7 @@ def main():
             os.chmod(tg.tmp_uids, stat.S_IRWXU | stat.S_IRWXG | stat.S_IRWXO)
         except:
             tmp_dir = "/tmp"
-        if is_debug:
-            print_message("Using {0} as a temporary dir".format(tmp_dir))
+        log.debug("Using {0} as a temporary dir".format(tmp_dir))
 
     uid = None
 
@@ -394,17 +407,17 @@ def main():
     if tmp_need_update:
         tg.update_cache_uid(zbx_to, str(uid).rstrip())
 
-    if is_debug:
-        print_message("Telegram uid of {0} '{1}': {2}".format(tg.type, zbx_to, uid))
+    log.debug("Telegram uid of {0} '{1}': {2}".format(tg.type, zbx_to, uid))
 
     # add signature, turned off by default, you can turn it on in config
     try:
         if zbxtg_settings.zbx_tg_signature:
             zbxtg_body_text.append("--")
-            zbxtg_body_text.append(zbxtg_settings.zbx_server)
+            zbxtg_body_text.append(zbxtg_settings.zbx_server) 
     except:
         pass
 
+    log.debug("Send message")
     # replace text with emojis
     if hasattr(zbxtg_settings, "emoji_map"):
         zbxtg_body_text_emoji_support = []
@@ -427,7 +440,7 @@ def main():
     else:
         zbx.login()
         if not zbx.cookie:
-            print_message("Login to Zabbix web UI has failed, check manually...")
+            log.info("Login to Zabbix web UI has failed, check manually...")
         else:
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                            settings["zbxtg_title"], settings["zbxtg_image_width"],
@@ -439,7 +452,7 @@ def main():
             tg.disable_notification = True
             if not zbxtg_file_img:
                 tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
-                print_message("Can't get image, check URL manually")
+                log.info("Can't get image, check URL manually")
             else:
 
                 zbxtg_body_text = ""
