@@ -357,11 +357,8 @@ def main():
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
-<<<<<<< HEAD
-=======
         tg_chat = True
         tg_group = True
->>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
         tg.type = "group"
 
     if "--debug" in sys.argv or is_debug:
@@ -464,12 +461,9 @@ def main():
             if result["description"].find("migrated") > -1 and result["description"].find("supergroup") > -1:
 
                 migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
-<<<<<<< HEAD
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
                                                                         "updating cache file")
-=======
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, updating cache file")
->>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
                 uid = migrate_to_chat_id
                 result = tg.send_message(uid, zbxtg_body_text)
 
@@ -496,14 +490,11 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                            settings["zbxtg_title"], settings["zbxtg_image_width"],
                                            settings["zbxtg_image_height"], tmp_dir)
-<<<<<<< HEAD
             tg.reply_to_message_id = message_id_last
-=======
             #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             result = tg.send_message(uid, zbxtg_body_text)
             message_id = result["result"]["message_id"]
             tg.reply_to_message_id = message_id
->>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
             tg.disable_notification = True
             if not zbxtg_file_img:
                 tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
