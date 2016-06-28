@@ -1,6 +1,7 @@
 TG_KEY="000:AAAAA_bbbb"
 
 ZBX_TG_PREFIX="zbxtg" # variable for separating text from script info
+ZBX_TG_SIGN="TRUE"
 
 ZBX_SERVER="http://zabbix.local" # zabbix server url
 ZBX_API_USER="api" # zabbix user; user must have at least read access to get graphs

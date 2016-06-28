@@ -13,6 +13,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 - [x] Channels support
 - [x] Saves chatid as a temporary file
 - [x] Simple markdown and HTML are supported
+- [x] Emoji in messages
 
 ### TODOs
 - Simple zabbix's management via bot's commands
