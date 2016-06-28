@@ -78,6 +78,30 @@ class TelegramAPI():
         else:
             return answer_json
 
+    def update_message(self, to, message_id, message):
+        url = self.tg_url_bot_general + self.key + "/editMessageText"
+        message = "\n".join(message)
+        params = {"chat_id": to, "message_id": message_id, "text": message,
+                  "disable_web_page_preview": self.disable_web_page_preview,
+                  "disable_notification": self.disable_notification}
+        if self.markdown or self.html:
+            parse_mode = "HTML"
+            if self.markdown:
+                parse_mode = "Markdown"
+            params["parse_mode"] = parse_mode
+        if self.debug:
+            print_message("Trying to /editMessageText:")
+            print_message(url)
+            print_message("post params: " + str(params))
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
+
     def send_photo(self, to, message, path):
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
@@ -214,7 +238,6 @@ def print_message(string):
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
     elements_new = []
-    element_last = None
     element_last_list = []
     for e in elements:
         symbols_count_now = symbols_count + len(e)
@@ -244,6 +267,7 @@ def main():
 
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
+    tmp_message_to_update = tmp_dir + "/message_to_update.txt"
     tmp_need_update = False  # do we need to update cache file with uids or not
 
     rnd = random.randint(0, 999)
@@ -264,7 +288,7 @@ def main():
         tg.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
             "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
-            }
+        }
 
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
@@ -273,7 +297,7 @@ def main():
         zbx.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
             "https": "https://{0}/".format(zbxtg_settings.proxy_to_zbx)
-            }
+        }
 
     try:
         zbx_api_verify = zbxtg_settings.zbx_api_verify
@@ -313,7 +337,7 @@ def main():
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
-            setting = re.split("[\s\:\=]+", line, maxsplit=1)
+            setting = re.split("[\s:=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
             if len(setting) > 1 and len(setting[1]) > 0:
                 value = setting[1]
@@ -333,8 +357,11 @@ def main():
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
+<<<<<<< HEAD
+=======
         tg_chat = True
         tg_group = True
+>>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
         tg.type = "group"
 
     if "--debug" in sys.argv or is_debug:
@@ -415,16 +442,53 @@ def main():
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
-    if not tg_method_image:
+    result = None
+
+    message_previous = {}
+    if os.path.exists(tmp_message_to_update):
+        try:
+            with open(tmp_message_to_update, 'r') as tmp_message_to_update_file:
+                message_previous = json.loads(tmp_message_to_update_file.read())
+        except:
+            pass
+    if message_previous:
+        zbx_subject_old = re.sub(zbxtg_settings.zbx_tg_matches["ok"], zbxtg_settings.zbx_tg_matches["problem"],
+                                 zbx_subject)
+        print zbx_subject_old
+        if zbx_subject_old == message_previous["zbx_subject"] and zbx_subject_old != zbx_subject:
+            zbxtg_body_text_new = message_previous["text"] + zbxtg_body_text
+            result = tg.update_message(to=uid, message_id=message_previous["message_id"], message=zbxtg_body_text_new)
+    if not result:
         result = tg.send_message(uid, zbxtg_body_text)
         if not result["ok"]:
             if result["description"].find("migrated") > -1 and result["description"].find("supergroup") > -1:
 
                 migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
+<<<<<<< HEAD
+                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
+                                                                        "updating cache file")
+=======
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, updating cache file")
+>>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
                 uid = migrate_to_chat_id
                 result = tg.send_message(uid, zbxtg_body_text)
-    else:
+
+    if is_debug:
+        print(result)
+    message_id_last = result["result"]["message_id"]
+    if is_debug:
+        print(message_id_last)
+    message_last = {
+        "message_id": message_id_last,
+        "zbx_subject": zbx_subject,
+        "text": zbxtg_body_text
+    }
+    print(message_last)
+
+    with open(tmp_message_to_update, "w") as tmp_message_to_update_file:
+        tmp_message_to_update_file.write(json.dumps(message_last))
+
+    if tg_method_image:
         zbx.login()
         if not zbx.cookie:
             print_message("Login to Zabbix web UI has failed, check manually...")
@@ -432,10 +496,14 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                            settings["zbxtg_title"], settings["zbxtg_image_width"],
                                            settings["zbxtg_image_height"], tmp_dir)
+<<<<<<< HEAD
+            tg.reply_to_message_id = message_id_last
+=======
             #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             result = tg.send_message(uid, zbxtg_body_text)
             message_id = result["result"]["message_id"]
             tg.reply_to_message_id = message_id
+>>>>>>> a16d018c8fea8d33d35818e113bf6e60fc9378d0
             tg.disable_notification = True
             if not zbxtg_file_img:
                 tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])

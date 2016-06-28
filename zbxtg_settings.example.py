@@ -6,6 +6,12 @@ zbx_tg_prefix = "zbxtg"  # variable for separating text from script info
 zbx_tg_tmp_dir = "/tmp/" + zbx_tg_prefix  # directory for saving caches, uids, cookies, etc.
 zbx_tg_signature = False
 
+zbx_tg_update_messages = True
+zbx_tg_matches = {
+    "problem": "PROBLEM: ",
+    "ok": "OK: "
+}
+
 zbx_server = "http://localhost"  # zabbix server full url
 zbx_api_user = "api"
 zbx_api_pass = "api"
