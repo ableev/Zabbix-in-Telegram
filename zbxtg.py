@@ -33,6 +33,7 @@ class TelegramAPI():
         self.disable_notification = False
         self.reply_to_message_id = 0
         self.tmp_uids = None
+        self.location = {"latitude": None, "longitude": None}
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -170,6 +171,25 @@ class TelegramAPI():
 
         return uid
 
+    def send_location(self, to, coordinates):
+        url = self.tg_url_bot_general + self.key + "/sendLocation"
+        params = {"chat_id": to, "disable_notification": self.disable_notification,
+                  "latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
+        if self.debug:
+            print_message("Trying to /sendLocation:")
+            print_message(url)
+            print_message("post params: " + str(params))
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
+
 
 class ZabbixAPI():
     def __init__(self, server, username, password):
@@ -261,6 +281,22 @@ def list_cut(elements, symbols_limit):
         return elements_new, True
 
 
+def get_coordinates_by_address(address):
+    coordinates = {"latitude": 0, "longitude": 0}
+    url_api = "https://geocode-maps.yandex.ru/1.x/?format=json&geocode="
+    url = url_api + address
+    result = requests.get(url).json()
+    try:
+        coordinates_text = result["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["Point"]["pos"]
+    except IndexError:
+        return coordinates
+    coordinates_splitted = coordinates_text.split(" ")
+    latitude = coordinates_splitted[1]
+    longitude = coordinates_splitted[0]
+    coordinates = {"latitude": latitude, "longitude": longitude}
+    return coordinates
+
+
 def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
@@ -320,6 +356,9 @@ def main():
         "is_debug": False,
         "is_channel": False,
         "disable_web_page_preview": False,
+        "location": None,  # address
+        "lat": 0,  # latitude
+        "lon": 0,  # longitude
     }
     settings_description = {
         "itemid": {"name": "zbxtg_itemid", "type": "int"},
@@ -333,6 +372,9 @@ def main():
         "debug": {"name": "is_debug", "type": "bool"},
         "channel": {"name": "is_channel", "type": "bool"},
         "disable_web_page_preview": {"name": "disable_web_page_preview", "type": "bool"},
+        "location": {"name": "location", "type": "str"},
+        "lat": {"name": "lat", "type": "str"},
+        "lon": {"name": "lon", "type": "str"},
     }
 
     for line in zbxtg_body:
@@ -383,6 +425,16 @@ def main():
         if is_debug:
             print_message("'disable_web_page_preview' option has been enabled")
         tg.disable_web_page_preview = True
+
+    location_coordinates = {"latitude": None, "longitude": None}
+    if settings["lat"] > 0 and settings["lat"] > 0:
+        location_coordinates = {"latitude": settings["lat"], "longitude": settings["lon"]}
+        tg.location = location_coordinates
+    else:
+        if settings["location"]:
+            location_coordinates = get_coordinates_by_address(settings["location"])
+            if location_coordinates:
+                tg.location = location_coordinates
 
     if not os.path.isdir(tmp_dir):
         if is_debug:
@@ -442,6 +494,7 @@ def main():
     result = None
 
     message_previous = {}
+    message_updated = False
     if os.path.exists(tmp_message_to_update):
         try:
             with open(tmp_message_to_update, 'r') as tmp_message_to_update_file:
@@ -451,10 +504,10 @@ def main():
     if message_previous:
         zbx_subject_old = re.sub(zbxtg_settings.zbx_tg_matches["ok"], zbxtg_settings.zbx_tg_matches["problem"],
                                  zbx_subject)
-        print zbx_subject_old
         if zbx_subject_old == message_previous["zbx_subject"] and zbx_subject_old != zbx_subject:
             zbxtg_body_text_new = message_previous["text"] + zbxtg_body_text
             result = tg.update_message(to=uid, message_id=message_previous["message_id"], message=zbxtg_body_text_new)
+            message_updated = True
     if not result:
         result = tg.send_message(uid, zbxtg_body_text)
         if not result["ok"]:
@@ -477,7 +530,6 @@ def main():
         "zbx_subject": zbx_subject,
         "text": zbxtg_body_text
     }
-    print(message_last)
 
     with open(tmp_message_to_update, "w") as tmp_message_to_update_file:
         tmp_message_to_update_file.write(json.dumps(message_last))
@@ -492,7 +544,6 @@ def main():
                                            settings["zbxtg_image_height"], tmp_dir)
             tg.reply_to_message_id = message_id_last
             #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
-            result = tg.send_message(uid, zbxtg_body_text)
             message_id = result["result"]["message_id"]
             tg.reply_to_message_id = message_id
             tg.disable_notification = True
@@ -511,6 +562,10 @@ def main():
                 """
                 if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
                     os.remove(zbxtg_file_img)
+    if tg.location and not message_updated and location_coordinates["latitude"] != 0 and location_coordinates["longitude"] != 0:
+        tg.reply_to_message_id = message_id_last
+        tg.disable_notification = True
+        tg.send_location(to=uid, coordinates=location_coordinates)
 
 
 if __name__ == "__main__":
