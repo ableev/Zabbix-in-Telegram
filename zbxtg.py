@@ -562,7 +562,7 @@ def main():
                 """
                 if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
                     os.remove(zbxtg_file_img)
-    if tg.location and not message_updated and location_coordinates["latitude"] != 0 and location_coordinates["longitude"] != 0:
+    if tg.location and not message_updated and location_coordinates["latitude"] and location_coordinates["longitude"]:
         tg.reply_to_message_id = message_id_last
         tg.disable_notification = True
         tg.send_location(to=uid, coordinates=location_coordinates)
