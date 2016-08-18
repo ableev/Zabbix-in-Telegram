@@ -281,20 +281,24 @@ def list_cut(elements, symbols_limit):
         return elements_new, True
 
 
-def get_coordinates_by_address(address):
-    coordinates = {"latitude": 0, "longitude": 0}
-    url_api = "https://geocode-maps.yandex.ru/1.x/?format=json&geocode="
-    url = url_api + address
-    result = requests.get(url).json()
-    try:
-        coordinates_text = result["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["Point"]["pos"]
-    except IndexError:
+class Maps():
+    # https://developers.google.com/maps/documentation/geocoding/intro
+    def __init__(self):
+        self.key = None
+
+    def get_coordinates_by_address(self, address):
+        coordinates = {"latitude": 0, "longitude": 0}
+        url_api = "https://maps.googleapis.com/maps/api/geocode/json?key={0}&address={1}".format(self.key, address)
+        url = url_api
+        result = requests.get(url).json()
+        try:
+            coordinates_dict = result["results"][0]["geometry"]["location"]
+        except:
+            if "error_message" in result:
+                print_message("[" + result["status"] + "]: " + result["error_message"])
+            return coordinates
+        coordinates = {"latitude": coordinates_dict["lat"], "longitude": coordinates_dict["lng"]}
         return coordinates
-    coordinates_splitted = coordinates_text.split(" ")
-    latitude = coordinates_splitted[1]
-    longitude = coordinates_splitted[0]
-    coordinates = {"latitude": latitude, "longitude": longitude}
-    return coordinates
 
 
 def main():
@@ -341,6 +345,14 @@ def main():
     except:
         pass
 
+    map = Maps()
+    # api key to resolve address to coordinates via google api
+    try:
+        if zbxtg_settings.google_maps_api_key:
+            map.key = zbxtg_settings.google_maps_api_key
+    except:
+        pass
+
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
@@ -359,6 +371,7 @@ def main():
         "location": None,  # address
         "lat": 0,  # latitude
         "lon": 0,  # longitude
+        "is_single_message": False,
     }
     settings_description = {
         "itemid": {"name": "zbxtg_itemid", "type": "int"},
@@ -375,6 +388,7 @@ def main():
         "location": {"name": "location", "type": "str"},
         "lat": {"name": "lat", "type": "str"},
         "lon": {"name": "lon", "type": "str"},
+        "single_message": {"name": "is_single_message", "type": "bool"},
     }
 
     for line in zbxtg_body:
@@ -396,6 +410,7 @@ def main():
     is_debug = bool(settings["is_debug"])
     is_channel = bool(settings["is_channel"])
     disable_web_page_preview = bool(settings["disable_web_page_preview"])
+    is_single_message = bool(settings["is_single_message"])
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
@@ -432,7 +447,7 @@ def main():
         tg.location = location_coordinates
     else:
         if settings["location"]:
-            location_coordinates = get_coordinates_by_address(settings["location"])
+            location_coordinates = map.get_coordinates_by_address(settings["location"])
             if location_coordinates:
                 tg.location = location_coordinates
 

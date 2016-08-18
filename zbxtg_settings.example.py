@@ -23,6 +23,9 @@ proxy_to_tg = None
 #proxy_to_zbx = "proxy.local:3128"
 #proxy_to_tg = "proxy.local:3128"
 
+google_maps_api_key = None # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
+
+
 emoji_map = {
     "ok": "✅",
     "problem": "❗",
