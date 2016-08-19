@@ -23,7 +23,16 @@ proxy_to_tg = None
 #proxy_to_zbx = "proxy.local:3128"
 #proxy_to_tg = "proxy.local:3128"
 
-google_maps_api_key = None # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
+google_maps_api_key = None  # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
+
+zbx_tg_daemon_enabled = False
+zbx_tg_daemon_wl_ids = [6931850, ]
+zbx_tg_daemon_wl_u = ["ableev", ]
+
+zbx_db_host = "localhost"
+zbx_db_database = "zabbix"
+zbx_db_user = "zbxtg"
+zbx_db_password = "zbxtg"
 
 
 emoji_map = {

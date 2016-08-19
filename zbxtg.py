@@ -34,6 +34,7 @@ class TelegramAPI():
         self.reply_to_message_id = 0
         self.tmp_uids = None
         self.location = {"latitude": None, "longitude": None}
+        self.update_offset = 0
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -42,17 +43,20 @@ class TelegramAPI():
 
     def get_updates(self):
         url = self.tg_url_bot_general + self.key + "/getUpdates"
+        params = {"offset": self.update_offset}
         if self.debug:
             print_message(url)
-        updates = self.http_get(url)
+        res = requests.post(url, params=params, proxies=self.proxies)
         if self.debug:
             print_message("Content of /getUpdates:")
-            print_message(updates)
-        if not updates["ok"]:
-            print_message(updates)
-            return updates
+            print_message(res.text)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
         else:
-            return updates
+            return answer_json
 
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
@@ -451,6 +455,9 @@ def main():
             if location_coordinates:
                 tg.location = location_coordinates
 
+    if "--show-settings" in sys.argv and is_debug:
+        print_message("Settings: " + str(json.dumps(settings, indent=2)))
+
     if not os.path.isdir(tmp_dir):
         if is_debug:
             print_message("Tmp dir doesn't exist, creating new one...")
@@ -538,8 +545,6 @@ def main():
     if is_debug:
         print(result)
     message_id_last = result["result"]["message_id"]
-    if is_debug:
-        print(message_id_last)
     message_last = {
         "message_id": message_id_last,
         "zbx_subject": zbx_subject,
