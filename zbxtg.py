@@ -308,6 +308,9 @@ class Maps():
 def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
+    if tmp_dir == "/tmp/" + zbxtg_settings.zbx_tg_prefix:
+        print_message("WARNING: it is strongly recommended to change `zbx_tg_tmp_dir` variable in config!!!")
+        print_message("https://github.com/ableev/Zabbix-in-Telegram/wiki/Change-zbx_tg_tmp_dir-in-settings")
 
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
