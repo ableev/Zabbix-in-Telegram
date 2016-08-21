@@ -404,8 +404,10 @@ def main():
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
             if len(setting) > 1 and len(setting[1]) > 0:
                 value = setting[1]
-            else:
+            elif settings_description[key]["type"] == "bool":
                 value = True
+            else:
+                value = settings[settings_description[key]["name"]]
             if key in settings_description:
                 settings[settings_description[key]["name"]] = value
         else:
@@ -456,6 +458,8 @@ def main():
         if settings["location"]:
             location_coordinates = map.get_coordinates_by_address(settings["location"])
             if location_coordinates:
+                settings["lat"] = location_coordinates["latitude"]
+                settings["lon"] = location_coordinates["longitude"]
                 tg.location = location_coordinates
 
     if "--show-settings" in sys.argv and is_debug:
