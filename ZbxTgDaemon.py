@@ -33,6 +33,7 @@ class ZabbixDB():
                              init_command='SET NAMES UTF8')
 
         self.sql = db.cursor(MySQLdb.cursors.DictCursor)
+        self.sql.connection.autocommit(True)
 
     def db_query(self, query):
 
@@ -194,7 +195,7 @@ def main():
                             if triggers:
                                 for t in triggers:
                                     reply_text.append("Severity: {0}, Host: {1}, Trigger: {2}".format(
-                                        t["severity"], t["host"], t["trigger"]
+                                        t["severity"], t["host"].encode('utf-8'), t["trigger"].encode('utf-8')
                                     ))
                             else:
                                 reply_text.append("There are no triggers, have a nice day!")
