@@ -12,7 +12,7 @@ zbx_tg_matches = {
     "ok": "OK: "
 }
 
-zbx_server = "http://localhost"  # zabbix server full url
+zbx_server = "http://127.0.0.1/zabbix/"  # zabbix server full url
 zbx_api_user = "api"
 zbx_api_pass = "api"
 zbx_api_verify = True  # True - do not ignore self signed certificates, False - ignore
@@ -36,11 +36,11 @@ zbx_db_password = "zbxtg"
 
 
 emoji_map = {
-    "ok": "✅",
-    "problem": "❗",
+    "OK": "✅",
+    "PROBLEM": "❗",
     "info": "ℹ️",
-    "warning": "⚠️",
-    "disaster": "❌",
+    "WARNING": "⚠️",
+    "DISASTER": "❌",
     "bomb": "💣",
     "fire": "🔥",
     "hankey": "💩",
