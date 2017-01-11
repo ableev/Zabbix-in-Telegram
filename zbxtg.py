@@ -411,7 +411,7 @@ def main():
         for l in zbxtg_body_text:
             l_new = l
             for k, v in zbxtg_settings.emoji_map.iteritems():
-                l_new = l_new.replace("{{" + k + "}}", v)
+                l_new = re.sub("{{" + k + "}}", v, l_new, flags=re.IGNORECASE)
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
