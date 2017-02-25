@@ -17,6 +17,10 @@ zbx_api_user = "api"
 zbx_api_pass = "api"
 zbx_api_verify = True  # True - do not ignore self signed certificates, False - ignore
 
+zbx_basic_auth = False
+zbx_basic_auth_user = "zabbix"
+zbx_basic_auth_pass = "zabbix"
+
 proxy_to_zbx = None
 proxy_to_tg = None
 
