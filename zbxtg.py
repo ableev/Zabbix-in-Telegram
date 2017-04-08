@@ -432,26 +432,21 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                            settings["zbxtg_title"], settings["zbxtg_image_width"],
                                            settings["zbxtg_image_height"], tmp_dir)
-            #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
-            result = tg.send_message(uid, zbxtg_body_text)
-            message_id = result["result"]["message_id"]
-            tg.reply_to_message_id = message_id
-            tg.disable_notification = True
+            if len(zbxtg_body_text) > 200:
+                result = tg.send_message(uid, zbxtg_body_text)
+                message_id = result["result"]["message_id"]
+                tg.reply_to_message_id = message_id
+                tg.disable_notification = True
+                if zbxtg_file_img:
+                    os.remove(zbxtg_file_img)
+            else:
+                tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
+
             if not zbxtg_file_img:
                 tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
                 print_message("Can't get image, check URL manually")
             else:
-
-                zbxtg_body_text = ""
-                """
-                if is_modified:
-                    print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                                  "the message has been cut to 200 symbols, "
-                                  "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                                  "#issuecomment-166895044")
-                """
-                if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
-                    os.remove(zbxtg_file_img)
+                os.remove(zbxtg_file_img)
 
 
 if __name__ == "__main__":
