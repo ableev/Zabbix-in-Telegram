@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import random
+import string
 import requests
 import json
 import re
@@ -13,7 +14,7 @@ from os.path import dirname
 import zbxtg_settings
 
 
-class TelegramAPI():
+class TelegramAPI:
     tg_url_bot_general = "https://api.telegram.org/bot"
 
     def http_get(self, url):
@@ -33,6 +34,9 @@ class TelegramAPI():
         self.disable_notification = False
         self.reply_to_message_id = 0
         self.tmp_uids = None
+        self.location = {"latitude": None, "longitude": None}
+        self.update_offset = 0
+        self.image_buttons = False
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -41,17 +45,20 @@ class TelegramAPI():
 
     def get_updates(self):
         url = self.tg_url_bot_general + self.key + "/getUpdates"
+        params = {"offset": self.update_offset}
         if self.debug:
             print_message(url)
-        updates = self.http_get(url)
+        res = requests.post(url, params=params, proxies=self.proxies)
         if self.debug:
             print_message("Content of /getUpdates:")
-            print_message(updates)
-        if not updates["ok"]:
-            print_message(updates)
-            return updates
+            print_message(res.text)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
         else:
-            return updates
+            return answer_json
 
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
@@ -71,6 +78,32 @@ class TelegramAPI():
             print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res.text
+        # if res.status_code == 414:
+        #     print("dafuq")
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
+
+    def update_message(self, to, message_id, message):
+        url = self.tg_url_bot_general + self.key + "/editMessageText"
+        message = "\n".join(message)
+        params = {"chat_id": to, "message_id": message_id, "text": message,
+                  "disable_web_page_preview": self.disable_web_page_preview,
+                  "disable_notification": self.disable_notification}
+        if self.markdown or self.html:
+            parse_mode = "HTML"
+            if self.markdown:
+                parse_mode = "Markdown"
+            params["parse_mode"] = parse_mode
+        if self.debug:
+            print_message("Trying to /editMessageText:")
+            print_message(url)
+            print_message("post params: " + str(params))
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res.text
         answer_json = json.loads(answer.decode('utf8'))
         if not answer_json["ok"]:
             print_message(answer_json)
@@ -81,12 +114,46 @@ class TelegramAPI():
     def send_photo(self, to, message, path):
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
-        params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification}
+        if self.image_buttons:
+            reply_markup = json.dumps({"inline_keyboard": [[
+                      {"text": "R", "callback_data": "graph_refresh"},
+                      {"text": "1h", "callback_data": "graph_period_3600"},
+                      {"text": "3h", "callback_data": "graph_period_10800"},
+                      {"text": "6h", "callback_data": "graph_period_21600"},
+                      {"text": "12h", "callback_data": "graph_period_43200"},
+                      {"text": "24h", "callback_data": "graph_period_86400"},
+                  ], ]})
+        else:
+            reply_markup = json.dumps({})
+        params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification,
+                  "reply_markup": reply_markup}
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
         files = {"photo": open(path, 'rb')}
         if self.debug:
             print_message("Trying to /sendPhoto:")
+            print_message(url)
+            print_message(params)
+            print_message("files: " + str(files))
+        res = requests.post(url, params=params, files=files, proxies=self.proxies)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
+
+    def send_txt(self, to, text, path):
+        path = tg.tm
+        url = self.tg_url_bot_general + self.key + "/sendDocument"
+        text = "\n".join(text)
+        params = {"chat_id": to, "caption": path.split("/")[-1], "disable_notification": self.disable_notification}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
+        files = {"document": open(path, 'rb')}
+        if self.debug:
+            print_message("Trying to /sendDocument:")
             print_message(url)
             print_message(params)
             print_message("files: " + str(files))
@@ -146,8 +213,42 @@ class TelegramAPI():
 
         return uid
 
+    def send_location(self, to, coordinates):
+        url = self.tg_url_bot_general + self.key + "/sendLocation"
+        params = {"chat_id": to, "disable_notification": self.disable_notification,
+                  "latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}
+        if self.reply_to_message_id:
+            params["reply_to_message_id"] = self.reply_to_message_id
+        if self.debug:
+            print_message("Trying to /sendLocation:")
+            print_message(url)
+            print_message("post params: " + str(params))
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
 
-class ZabbixAPI():
+    def answer_callback_query(self, callback_query_id, text=None):
+        url = self.tg_url_bot_general + self.key + "/answerCallbackQuery"
+        if not text:
+            params = {"callback_query_id": callback_query_id}
+        else:
+            params = {"callback_query_id": callback_query_id, "text": text}
+        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = res.text
+        answer_json = json.loads(answer.decode('utf8'))
+        if not answer_json["ok"]:
+            print_message(answer_json)
+            return answer_json
+        else:
+            return answer_json
+
+
+class ZabbixAPI:
     def __init__(self, server, username, password):
         self.debug = False
         self.server = server
@@ -156,6 +257,8 @@ class ZabbixAPI():
         self.proxies = {}
         self.verify = True
         self.cookie = None
+        self.basic_auth_user = None
+        self.basic_auth_pass = None
 
     def login(self):
 
@@ -163,7 +266,8 @@ class ZabbixAPI():
             requests.packages.urllib3.disable_warnings()
 
         data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
-        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify)
+        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify,
+                                   auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
         cookie = req_cookie.cookies
         if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
             print_message("probably the server in your config file has not full URL (for example "
@@ -175,18 +279,37 @@ class ZabbixAPI():
         self.cookie = cookie
 
     def graph_get(self, itemid, period, title, width, height, tmp_dir):
-        file_img = tmp_dir + "/{0}.png".format(itemid)
+        file_img = tmp_dir + "/{0}.png".format("".join(itemid))
 
         title = requests.utils.quote(title)
 
-        zbx_img_url = self.server + "/chart3.php?period={1}&name={2}" \
-                                    "&width={3}&height={4}&graphtype=0&legend=1" \
-                                    "&items[0][itemid]={0}&items[0][sortorder]=0" \
-                                    "&items[0][drawtype]=5&items[0][color]=00CC00".format(itemid, period, title,
-                                                                                          width, height)
+        colors = {
+            0: "00CC00",
+            1: "CC0000",
+            2: "0000CC",
+            3: "CCCC00",
+            4: "00CCCC",
+            5: "CC00CC",
+        }
+
+        drawtype = 5
+        if len(itemid) > 1:
+            drawtype = 2
+
+        zbx_img_url_itemids = []
+        for i in range(0, len(itemid)):
+            itemid_url = "&items[{0}][itemid]={1}&items[{0}][sortorder]={0}&" \
+                         "items[{0}][drawtype]={3}&items[{0}][color]={2}".format(i, itemid[i], colors[i], drawtype)
+            zbx_img_url_itemids.append(itemid_url)
+
+        zbx_img_url = self.server + "/chart3.php?period={0}&name={1}" \
+                                    "&width={2}&height={3}&graphtype=0&legend=1".format(period, title, width, height)
+        zbx_img_url += "".join(zbx_img_url_itemids)
+
         if self.debug:
             print_message(zbx_img_url)
-        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify)
+        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify,
+                           auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
         res_code = res.status_code
         if res_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
@@ -214,7 +337,6 @@ def print_message(string):
 def list_cut(elements, symbols_limit):
     symbols_count = symbols_count_now = 0
     elements_new = []
-    element_last = None
     element_last_list = []
     for e in elements:
         symbols_count_now = symbols_count + len(e)
@@ -238,12 +360,54 @@ def list_cut(elements, symbols_limit):
         return elements_new, True
 
 
+class Maps:
+    # https://developers.google.com/maps/documentation/geocoding/intro
+    def __init__(self):
+        self.key = None
+
+    def get_coordinates_by_address(self, address):
+        coordinates = {"latitude": 0, "longitude": 0}
+        url_api = "https://maps.googleapis.com/maps/api/geocode/json?key={0}&address={1}".format(self.key, address)
+        url = url_api
+        result = requests.get(url).json()
+        try:
+            coordinates_dict = result["results"][0]["geometry"]["location"]
+        except:
+            if "error_message" in result:
+                print_message("[" + result["status"] + "]: " + result["error_message"])
+            return coordinates
+        coordinates = {"latitude": coordinates_dict["lat"], "longitude": coordinates_dict["lng"]}
+        return coordinates
+
+
+def file_write(filename, text):
+    with open(filename, "w") as fd:
+        fd.write(str(text))
+    return True
+
+
+def file_read(filename):
+    with open(filename, "a") as fd:
+        text = fd.readlines()
+    return text
+
+
+def file_append(filename, text):
+    with open(filename, "a") as fd:
+        fd.write(str(text))
+    return True
+
+
 def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
+    if tmp_dir == "/tmp/" + zbxtg_settings.zbx_tg_prefix:
+        print_message("WARNING: it is strongly recommended to change `zbx_tg_tmp_dir` variable in config!!!")
+        print_message("https://github.com/ableev/Zabbix-in-Telegram/wiki/Change-zbx_tg_tmp_dir-in-settings")
 
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
+    tmp_messages_graphs = tmp_dir + "/mg.txt"
     tmp_need_update = False  # do we need to update cache file with uids or not
 
     rnd = random.randint(0, 999)
@@ -254,7 +418,7 @@ def main():
 
     zbx_to = sys.argv[1]
     zbx_subject = sys.argv[2]
-    zbx_body = sys.argv[3]
+    zbx_body = sys.argv[3].decode("string_escape")
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
@@ -264,7 +428,7 @@ def main():
         tg.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
             "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
-            }
+        }
 
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
@@ -273,11 +437,27 @@ def main():
         zbx.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
             "https": "https://{0}/".format(zbxtg_settings.proxy_to_zbx)
-            }
+        }
+
+    # https://github.com/ableev/Zabbix-in-Telegram/issues/55
+    try:
+        if zbxtg_settings.zbx_basic_auth:
+            zbx.basic_auth_user = zbxtg_settings.zbx_basic_auth_user
+            zbx.basic_auth_pass = zbxtg_settings.zbx_basic_auth_pass
+    except:
+        pass
 
     try:
         zbx_api_verify = zbxtg_settings.zbx_api_verify
         zbx.verify = zbx_api_verify
+    except:
+        pass
+
+    map = Maps()
+    # api key to resolve address to coordinates via google api
+    try:
+        if zbxtg_settings.google_maps_api_key:
+            map.key = zbxtg_settings.google_maps_api_key
     except:
         pass
 
@@ -296,9 +476,18 @@ def main():
         "is_debug": False,
         "is_channel": False,
         "disable_web_page_preview": False,
+        "location": None,  # address
+        "lat": 0,  # latitude
+        "lon": 0,  # longitude
+        "is_single_message": False,
+        "markdown": False,
+        "html": False,
+        "signature": False,
+        "signature_disable": False,
+        "graph_buttons": False,
     }
     settings_description = {
-        "itemid": {"name": "zbxtg_itemid", "type": "int"},
+        "itemid": {"name": "zbxtg_itemid", "type": "list"},
         "title": {"name": "zbxtg_title", "type": "str"},
         "graphs_period": {"name": "zbxtg_image_period", "type": "int"},
         "graphs_width": {"name": "zbxtg_image_width", "type": "int"},
@@ -309,16 +498,29 @@ def main():
         "debug": {"name": "is_debug", "type": "bool"},
         "channel": {"name": "is_channel", "type": "bool"},
         "disable_web_page_preview": {"name": "disable_web_page_preview", "type": "bool"},
+        "location": {"name": "location", "type": "str"},
+        "lat": {"name": "lat", "type": "str"},
+        "lon": {"name": "lon", "type": "str"},
+        "single_message": {"name": "is_single_message", "type": "bool"},
+        "markdown": {"name": "markdown", "type": "bool"},
+        "html": {"name": "html", "type": "bool"},
+        "signature": {"name": "signature", "type": "bool"},
+        "signature_disable": {"name": "signature_disable", "type": "bool"},
+        "graph_buttons": {"name": "graph_buttons", "type": "bool"},
     }
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
-            setting = re.split("[\s\:\=]+", line, maxsplit=1)
+            setting = re.split("[\s:=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
-            if len(setting) > 1 and len(setting[1]) > 0:
+            if settings_description[key]["type"] == "list":
+                value = setting[1].split(",")
+            elif len(setting) > 1 and len(setting[1]) > 0:
                 value = setting[1]
-            else:
+            elif settings_description[key]["type"] == "bool":
                 value = True
+            else:
+                value = settings[settings_description[key]["name"]]
             if key in settings_description:
                 settings[settings_description[key]["name"]] = value
         else:
@@ -330,6 +532,7 @@ def main():
     is_debug = bool(settings["is_debug"])
     is_channel = bool(settings["is_channel"])
     disable_web_page_preview = bool(settings["disable_web_page_preview"])
+    is_single_message = bool(settings["is_single_message"])
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
     if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
@@ -346,10 +549,10 @@ def main():
         log_file = tmp_dir + ".debug." + hash_ts + ".log"
         #print_message(log_file)
 
-    if "--markdown" in sys.argv:
+    if "--markdown" in sys.argv or settings["markdown"]:
         tg.markdown = True
 
-    if "--html" in sys.argv:
+    if "--html" in sys.argv or settings["html"]:
         tg.html = True
 
     if "--channel" in sys.argv or is_channel:
@@ -359,6 +562,24 @@ def main():
         if is_debug:
             print_message("'disable_web_page_preview' option has been enabled")
         tg.disable_web_page_preview = True
+
+    if "--graph_buttons" in sys.argv or settings["graph_buttons"]:
+        tg.image_buttons = True
+
+    location_coordinates = {"latitude": None, "longitude": None}
+    if settings["lat"] > 0 and settings["lat"] > 0:
+        location_coordinates = {"latitude": settings["lat"], "longitude": settings["lon"]}
+        tg.location = location_coordinates
+    else:
+        if settings["location"]:
+            location_coordinates = map.get_coordinates_by_address(settings["location"])
+            if location_coordinates:
+                settings["lat"] = location_coordinates["latitude"]
+                settings["lon"] = location_coordinates["longitude"]
+                tg.location = location_coordinates
+
+    if "--show-settings" in sys.argv and is_debug:
+        print_message("Settings: " + str(json.dumps(settings, indent=2)))
 
     if not os.path.isdir(tmp_dir):
         if is_debug:
@@ -377,7 +598,7 @@ def main():
 
     if tg.type == "channel":
         uid = zbx_to
-    else:
+    if tg.type == "private":
         zbx_to = zbx_to.replace("@", "")
 
     if not uid:
@@ -399,7 +620,8 @@ def main():
 
     # add signature, turned off by default, you can turn it on in config
     try:
-        if zbxtg_settings.zbx_tg_signature:
+        if "--signature" in sys.argv or settings["signature"] or zbxtg_settings.zbx_tg_signature\
+                and not "--signature_disable" in sys.argv and not settings["signature_disable"]:
             zbxtg_body_text.append("--")
             zbxtg_body_text.append(zbxtg_settings.zbx_server)
     except:
@@ -415,16 +637,23 @@ def main():
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
-    if not tg_method_image:
+    result = None
+
+    if not is_single_message and not result:
         result = tg.send_message(uid, zbxtg_body_text)
         if not result["ok"]:
             if result["description"].find("migrated") > -1 and result["description"].find("supergroup") > -1:
 
                 migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
-                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, updating cache file")
+                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
+                                                                        "updating cache file")
                 uid = migrate_to_chat_id
                 result = tg.send_message(uid, zbxtg_body_text)
-    else:
+
+    if is_debug:
+        print(result)
+
+    if tg_method_image:
         zbx.login()
         if not zbx.cookie:
             print_message("Login to Zabbix web UI has failed, check manually...")
@@ -432,26 +661,35 @@ def main():
             zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                            settings["zbxtg_title"], settings["zbxtg_image_width"],
                                            settings["zbxtg_image_height"], tmp_dir)
-            #zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
-            result = tg.send_message(uid, zbxtg_body_text)
-            message_id = result["result"]["message_id"]
+            zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            if result:
+                message_id = result["result"]["message_id"]
+            else:
+                message_id = 0
             tg.reply_to_message_id = message_id
-            tg.disable_notification = True
+            if not is_single_message:
+                tg.disable_notification = True
             if not zbxtg_file_img:
                 tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
                 print_message("Can't get image, check URL manually")
             else:
-
-                zbxtg_body_text = ""
-                """
-                if is_modified:
-                    print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                                  "the message has been cut to 200 symbols, "
-                                  "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                                  "#issuecomment-166895044")
-                """
-                if tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img):
+                if not is_single_message:
+                    zbxtg_body_text = ""
+                else:
+                    if is_modified:
+                        print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
+                                      "the message has been cut to 200 symbols, "
+                                      "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
+                                      "#issuecomment-166895044")
+                result = tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
+                if result:
+                    settings["zbxtg_body_text"] = zbxtg_body_text
+                    file_append(tmp_messages_graphs, "{0}: {1},".format(tg.reply_to_message_id, settings))
                     os.remove(zbxtg_file_img)
+    if tg.location and location_coordinates["latitude"] and location_coordinates["longitude"]:
+        tg.reply_to_message_id = message_id_last
+        tg.disable_notification = True
+        tg.send_location(to=uid, coordinates=location_coordinates)
 
 
 if __name__ == "__main__":
