@@ -396,7 +396,7 @@ def file_write(filename, text):
 
 
 def file_read(filename):
-    with open(filename, "a") as fd:
+    with open(filename, "r") as fd:
         text = fd.readlines()
     return text
 
