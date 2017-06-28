@@ -10,6 +10,7 @@ import requests
 import json
 import re
 import stat
+import hashlib
 #import sqlite3
 from os.path import dirname
 import zbxtg_settings
@@ -407,6 +408,24 @@ def file_append(filename, text):
     return True
 
 
+def external_image_get(url, tmp_dir, timeout=6):
+    image_hash = hashlib.md5()
+    image_hash.update(url)
+    file_img = tmp_dir + "/external_{0}.png".format(image_hash.hexdigest())
+    try:
+        res = requests.get(url, timeout=timeout)
+    except requests.exceptions.ReadTimeout as ex:
+        print_message("Can't get external image from '{0}': timeout".format(url))
+        return False
+    res_code = res.status_code
+    if res_code == 404:
+        print_message("Can't get external image from '{0}': HTTP 404 error".format(url))
+        return False
+    res_img = res.content
+    file_write(file_img, res_img)
+    return file_img
+
+
 def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
@@ -494,6 +513,7 @@ def main():
         "signature": False,
         "signature_disable": False,
         "graph_buttons": False,
+        "extimg": None,
     }
     settings_description = {
         "itemid": {"name": "zbxtg_itemid", "type": "list"},
@@ -516,6 +536,7 @@ def main():
         "signature": {"name": "signature", "type": "bool"},
         "signature_disable": {"name": "signature_disable", "type": "bool"},
         "graph_buttons": {"name": "graph_buttons", "type": "bool"},
+        "external_image": {"name": "extimg", "type": "str"},
     }
 
     for line in zbxtg_body:
@@ -667,9 +688,12 @@ def main():
         if not zbx.cookie:
             print_message("Login to Zabbix web UI has failed, check manually...")
         else:
-            zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
-                                           settings["zbxtg_title"], settings["zbxtg_image_width"],
-                                           settings["zbxtg_image_height"], tmp_dir)
+            if not settings["extimg"]:
+                zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
+                                               settings["zbxtg_title"], settings["zbxtg_image_width"],
+                                               settings["zbxtg_image_height"], tmp_dir)
+            else:
+                zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             if result:
                 message_id = result["result"]["message_id"]
