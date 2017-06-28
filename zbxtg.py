@@ -11,6 +11,7 @@ import json
 import re
 import stat
 import hashlib
+import subprocess
 #import sqlite3
 from os.path import dirname
 import zbxtg_settings
@@ -444,9 +445,11 @@ def main():
 
     log_file = "/dev/null"
 
-    zbx_to = sys.argv[1]
-    zbx_subject = sys.argv[2]
-    zbx_body = sys.argv[3].decode("string_escape")
+    args = sys.argv
+
+    zbx_to = args[1]
+    zbx_subject = args[2]
+    zbx_body = args[3].decode("string_escape")
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
@@ -514,6 +517,9 @@ def main():
         "signature_disable": False,
         "graph_buttons": False,
         "extimg": None,
+        "to": None,
+        "to_group": None,
+        "forked": False,
     }
     settings_description = {
         "itemid": {"name": "zbxtg_itemid", "type": "list"},
@@ -537,6 +543,9 @@ def main():
         "signature_disable": {"name": "signature_disable", "type": "bool"},
         "graph_buttons": {"name": "graph_buttons", "type": "bool"},
         "external_image": {"name": "extimg", "type": "str"},
+        "to": {"name": "to", "type": "str"},
+        "to_group": {"name": "to_group", "type": "str"},
+        "forked": {"name": "forked", "type": "bool"},
     }
 
     for line in zbxtg_body:
@@ -596,6 +605,9 @@ def main():
     if "--graph_buttons" in sys.argv or settings["graph_buttons"]:
         tg.image_buttons = True
 
+    if "--forked" in args:
+        settings["forked"] = True
+
     location_coordinates = {"latitude": None, "longitude": None}
     if settings["lat"] > 0 and settings["lat"] > 0:
         location_coordinates = {"latitude": settings["lat"], "longitude": settings["lon"]}
@@ -623,6 +635,37 @@ def main():
             tmp_dir = "/tmp"
         if is_debug:
             print_message("Using {0} as a temporary dir".format(tmp_dir))
+
+    done_all_work_in_the_fork = False
+    # issue75
+    if settings["to"] and not settings["forked"]:
+        # zbx_to = settings["to"]
+        multiple_to = re.split("[\s,]+", settings["to"])
+        for i in multiple_to:
+            args_new = list(args)
+            args_new[1] = i
+            args_new.append("--forked")
+            args_new.insert(0, sys.executable)
+            if is_debug:
+                print_message("Fork for custom recipient, new args: {0}".format(args_new))
+            subprocess.call(args_new)
+            did_all_work_in_the_fork = True
+
+    if settings["to_group"] and not settings["forked"]:
+        # zbx_to = settings["to"]
+        multiple_to_group = re.split("[\s,]+", settings["to_group"])
+        for i in multiple_to_group:
+            args_new = list(args)
+            args_new[1] = i
+            args_new.append("--group")
+            args_new.append("--forked")
+            args_new.insert(0, sys.executable)
+            print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
+            subprocess.call(args_new)
+            did_all_work_in_the_fork = True
+
+    if done_all_work_in_the_fork:
+        sys.exit(0)
 
     uid = None
 
