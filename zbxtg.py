@@ -10,8 +10,17 @@ import requests
 import json
 import re
 import stat
+#import sqlite3
 from os.path import dirname
 import zbxtg_settings
+
+
+class Cache:
+    def __init__(self, database):
+        self.database = database
+
+    def create_db(self, database):
+        pass
 
 
 class TelegramAPI:
