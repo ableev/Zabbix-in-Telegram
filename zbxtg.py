@@ -660,7 +660,8 @@ def main():
             args_new.append("--group")
             args_new.append("--forked")
             args_new.insert(0, sys.executable)
-            print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
+            if is_debug:
+                print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
             subprocess.call(args_new)
             done_all_work_in_the_fork = True
 
