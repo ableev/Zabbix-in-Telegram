@@ -649,7 +649,7 @@ def main():
             if is_debug:
                 print_message("Fork for custom recipient, new args: {0}".format(args_new))
             subprocess.call(args_new)
-            did_all_work_in_the_fork = True
+            done_all_work_in_the_fork = True
 
     if settings["to_group"] and not settings["forked"]:
         # zbx_to = settings["to"]
@@ -662,7 +662,7 @@ def main():
             args_new.insert(0, sys.executable)
             print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
             subprocess.call(args_new)
-            did_all_work_in_the_fork = True
+            done_all_work_in_the_fork = True
 
     if done_all_work_in_the_fork:
         sys.exit(0)
