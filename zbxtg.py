@@ -109,6 +109,8 @@ class TelegramAPI():
                 chat = m["message"]["chat"]
             elif "edited_message" in m:
                 chat = m["edited_message"]["chat"]
+            else:
+                continue
             if chat["type"] == self.type == "private":
                 if "username" in chat:
                     if chat["username"] == name:
