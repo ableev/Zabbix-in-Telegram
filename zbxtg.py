@@ -184,7 +184,8 @@ class TelegramAPI:
         if self.type == "private":
             print_message("User '{0}' needs to send some text bot in private".format(to))
         if self.type == "group":
-            print_message("You need to mention your bot in '{0}' group chat (i.e. type @YourBot)".format(to))
+            print_message("You need start a conversation with your bot first in '{0}' group chat, type '/start@{1}'"
+                          .format(to, self.get_me()["result"]["username"]))
 
     def update_cache_uid(self, name, uid, message="Add new string to cache file"):
         cache_string = "{0};{1};{2}\n".format(name, self.type, str(uid).rstrip())
