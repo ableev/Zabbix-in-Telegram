@@ -29,10 +29,10 @@ class TelegramAPI:
     tg_url_bot_general = "https://api.telegram.org/bot"
 
     def http_get(self, url):
-        res = requests.get(url, proxies=self.proxies)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        return answer_json
+        answer = requests.get(url, proxies=self.proxies)
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
 
     def __init__(self, key):
         self.debug = False
@@ -48,6 +48,9 @@ class TelegramAPI:
         self.location = {"latitude": None, "longitude": None}
         self.update_offset = 0
         self.image_buttons = False
+        self.result = None
+        self.ok = None
+        self.error = None
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -59,17 +62,13 @@ class TelegramAPI:
         params = {"offset": self.update_offset}
         if self.debug:
             print_message(url)
-        res = requests.post(url, params=params, proxies=self.proxies)
+        answer = requests.post(url, params=params, proxies=self.proxies)
+        self.result = answer.json()
         if self.debug:
             print_message("Content of /getUpdates:")
-            print_message(res.text)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+            print_message(self.result)
+        self.ok_update()
+        return self.result
 
     def send_message(self, to, message):
         url = self.tg_url_bot_general + self.key + "/sendMessage"
@@ -87,16 +86,12 @@ class TelegramAPI:
             print_message("Trying to /sendMessage:")
             print_message(url)
             print_message("post params: " + str(params))
-        res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res.text
-        # if res.status_code == 414:
+        answer = requests.post(url, params=params, proxies=self.proxies)
+        # if answer.status_code == 414:
         #     print("dafuq")
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
 
     def update_message(self, to, message_id, message):
         url = self.tg_url_bot_general + self.key + "/editMessageText"
@@ -113,27 +108,23 @@ class TelegramAPI:
             print_message("Trying to /editMessageText:")
             print_message(url)
             print_message("post params: " + str(params))
-        res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+        answer = requests.post(url, params=params, proxies=self.proxies)
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
 
     def send_photo(self, to, message, path):
         url = self.tg_url_bot_general + self.key + "/sendPhoto"
         message = "\n".join(message)
         if self.image_buttons:
             reply_markup = json.dumps({"inline_keyboard": [[
-                      {"text": "R", "callback_data": "graph_refresh"},
-                      {"text": "1h", "callback_data": "graph_period_3600"},
-                      {"text": "3h", "callback_data": "graph_period_10800"},
-                      {"text": "6h", "callback_data": "graph_period_21600"},
-                      {"text": "12h", "callback_data": "graph_period_43200"},
-                      {"text": "24h", "callback_data": "graph_period_86400"},
-                  ], ]})
+                {"text": "R", "callback_data": "graph_refresh"},
+                {"text": "1h", "callback_data": "graph_period_3600"},
+                {"text": "3h", "callback_data": "graph_period_10800"},
+                {"text": "6h", "callback_data": "graph_period_21600"},
+                {"text": "12h", "callback_data": "graph_period_43200"},
+                {"text": "24h", "callback_data": "graph_period_86400"},
+            ], ]})
         else:
             reply_markup = json.dumps({})
         params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification,
@@ -146,14 +137,10 @@ class TelegramAPI:
             print_message(url)
             print_message(params)
             print_message("files: " + str(files))
-        res = requests.post(url, params=params, files=files, proxies=self.proxies)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+        answer = requests.post(url, params=params, files=files, proxies=self.proxies)
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
 
     def send_txt(self, to, text, path):
         path = tg.tm
@@ -168,14 +155,10 @@ class TelegramAPI:
             print_message(url)
             print_message(params)
             print_message("files: " + str(files))
-        res = requests.post(url, params=params, files=files, proxies=self.proxies)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+        answer = requests.post(url, params=params, files=files, proxies=self.proxies)
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
 
     def get_uid(self, name):
         uid = 0
@@ -216,12 +199,10 @@ class TelegramAPI:
         if os.path.isfile(self.tmp_uids):
             with open(self.tmp_uids, 'r') as cache_file_uids:
                 cache_uids_old = cache_file_uids.readlines()
-
             for u in cache_uids_old:
                 u_splitted = u.split(";")
                 if name == u_splitted[0] and self.type == u_splitted[1]:
                     uid = u_splitted[2]
-
         return uid
 
     def send_location(self, to, coordinates):
@@ -236,12 +217,9 @@ class TelegramAPI:
             print_message("post params: " + str(params))
         res = requests.post(url, params=params, proxies=self.proxies)
         answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
-        else:
-            return answer_json
+        self.result = json.loads(answer.decode('utf8'))
+        self.ok_update()
+        return self.result
 
     def answer_callback_query(self, callback_query_id, text=None):
         url = self.tg_url_bot_general + self.key + "/answerCallbackQuery"
@@ -249,14 +227,27 @@ class TelegramAPI:
             params = {"callback_query_id": callback_query_id}
         else:
             params = {"callback_query_id": callback_query_id, "text": text}
-        res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res.text
-        answer_json = json.loads(answer.decode('utf8'))
-        if not answer_json["ok"]:
-            print_message(answer_json)
-            return answer_json
+        answer = requests.post(url, params=params, proxies=self.proxies)
+        self.result = answer.json()
+        self.ok_update()
+        return self.result
+
+    def ok_update(self):
+        self.ok = self.result["ok"]
+        if self.ok:
+            self.error = None
         else:
-            return answer_json
+            self.error = self.result["description"]
+            print_message(self.error)
+        return True
+
+
+def markdown_fix(message, offset):
+    offset = int(offset)
+    message = "\n".join(message)
+    message = message[:offset] + message[offset+1:]
+    message = message.split("\n")
+    return message
 
 
 class ZabbixAPI:
@@ -319,13 +310,13 @@ class ZabbixAPI:
 
         if self.debug:
             print_message(zbx_img_url)
-        res = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify,
+        answer = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify,
                            auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
-        res_code = res.status_code
-        if res_code == 404:
+        status_code = answer.status_code
+        if status_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             return False
-        res_img = res.content
+        res_img = answer.content
         with open(file_img, 'wb') as fp:
             fp.write(res_img)
         return file_img
@@ -339,10 +330,10 @@ class ZabbixAPI:
         return api.text
 
 
-def print_message(string):
-    string = str(string) + "\n"
+def print_message(message):
+    message = str(message) + "\n"
     filename = sys.argv[0].split("/")[-1]
-    sys.stderr.write(filename + ": " + string)
+    sys.stderr.write(filename + ": " + message)
 
 
 def list_cut(elements, symbols_limit):
@@ -414,16 +405,16 @@ def external_image_get(url, tmp_dir, timeout=6):
     image_hash.update(url)
     file_img = tmp_dir + "/external_{0}.png".format(image_hash.hexdigest())
     try:
-        res = requests.get(url, timeout=timeout)
+        answer = requests.get(url, timeout=timeout)
     except requests.exceptions.ReadTimeout as ex:
         print_message("Can't get external image from '{0}': timeout".format(url))
         return False
-    res_code = res.status_code
-    if res_code == 404:
+    status_code = answer.status_code
+    if status_code == 404:
         print_message("Can't get external image from '{0}': HTTP 404 error".format(url))
         return False
-    res_img = res.content
-    file_write(file_img, res_img)
+    answer_image = answer.content
+    file_write(file_img, answer_image)
     return file_img
 
 
@@ -446,6 +437,102 @@ def main():
     log_file = "/dev/null"
 
     args = sys.argv
+
+    settings = {
+        "zbxtg_itemid": "0",  # itemid for graph
+        "zbxtg_title": None,  # title for graph
+        "zbxtg_image_period": "3600",
+        "zbxtg_image_width": "900",
+        "zbxtg_image_height": "200",
+        "tg_method_image": False,  # if True - default send images, False - send text
+        "tg_chat": False,  # send message to chat or in private
+        "tg_group": False,  # send message to chat or in private
+        "is_debug": False,
+        "is_channel": False,
+        "disable_web_page_preview": False,
+        "location": None,  # address
+        "lat": 0,  # latitude
+        "lon": 0,  # longitude
+        "is_single_message": False,
+        "markdown": False,
+        "html": False,
+        "signature": False,
+        "signature_disable": False,
+        "graph_buttons": False,
+        "extimg": None,
+        "to": None,
+        "to_group": None,
+        "forked": False,
+    }
+
+    url_github = "https://github.com/ableev/Zabbix-in-Telegram"
+    url_wiki_base = "https://github.com/ableev/Zabbix-in-Telegram/wiki"
+    url_tg_group = "https://t.me/ZbxTg"
+    url_tg_channel = "https://t.me/Zabbix_in_Telegram"
+
+    settings_description = {
+        "itemid": {"name": "zbxtg_itemid", "type": "list",
+                   "help": "script will attach a graph with that itemid (could be multiple)", "url": "Graphs"},
+        "title": {"name": "zbxtg_title", "type": "str", "help": "title for attached graph", "url": "Graphs"},
+        "graphs_period": {"name": "zbxtg_image_period", "type": "int", "help": "graph period", "url": "Graphs"},
+        "graphs_width": {"name": "zbxtg_image_width", "type": "int", "help": "graph width", "url": "Graphs"},
+        "graphs_height": {"name": "zbxtg_image_height", "type": "int", "help": "graph height", "url": "Graphs"},
+        "graphs": {"name": "tg_method_image", "type": "bool", "help": "enables graph sending", "url": "Graphs"},
+        "chat": {"name": "tg_chat", "type": "bool", "help": "deprecated, don't use it, see 'group'",
+                 "url": "How-to-send-message-to-the-group-chat"},
+        "group": {"name": "tg_group", "type": "bool", "help": "sends message to a group",
+                  "url": "How-to-send-message-to-the-group-chat"},
+        "debug": {"name": "is_debug", "type": "bool", "help": "enables 'debug'",
+                  "url": "How-to-test-script-in-command-line"},
+        "channel": {"name": "is_channel", "type": "bool", "help": "sends message to a channel",
+                    "url": "Channel-support"},
+        "disable_web_page_preview": {"name": "disable_web_page_preview", "type": "bool",
+                                     "help": "disable web page preview", "url": "Disable-web-page-preview"},
+        "location": {"name": "location", "type": "str", "help": "address of location", "url": "Location"},
+        "lat": {"name": "lat", "type": "str", "help": "specify latitude (and lon too!)", "url": "Location"},
+        "lon": {"name": "lon", "type": "str", "help": "specify longitude (and lat too!)", "url": "Location"},
+        "single_message": {"name": "is_single_message", "type": "bool", "help": "do not split message and graph",
+                           "url": "Why-am-I-getting-two-messages-instead-of-one"},
+        "markdown": {"name": "markdown", "type": "bool", "help": "markdown support", "url": "Markdown-and-HTML"},
+        "html": {"name": "html", "type": "bool", "help": "markdown support", "url": "Markdown-and-HTML"},
+        "signature": {"name": "signature", "type": "bool",
+                      "help": "bot's signature", "url": "Bot-signature"},
+        "signature_disable": {"name": "signature_disable", "type": "bool",
+                              "help": "enables/disables bot's signature", "url": "Bot-signature"},
+        "graph_buttons": {"name": "graph_buttons", "type": "bool",
+                          "help": "activates buttons under graph, could be using in ZbxTgDaemon",
+                          "url": "Interactive-bot"},
+        "external_image": {"name": "extimg", "type": "str",
+                           "help": "should be url; attaches external image from different source",
+                           "url": "External-image-as-graph"},
+        "to": {"name": "to", "type": "str", "help": "rewrite zabbix username, use that instead of arguments",
+               "url": "Custom-to-and-to_group"},
+        "to_group": {"name": "to_group", "type": "str",
+                     "help": "rewrite zabbix username, use that instead of arguments", "url": "Custom-to-and-to_group"},
+        "forked": {"name": "forked", "type": "bool", "help": "internal variable, do not use it. Ever.", "url": ""},
+    }
+
+    if len(args) < 4:
+        do_not_exit = False
+        if "--features" in args:
+            print("List of available settings, see {0}/Settings\n---".format(url_wiki_base))
+            for sett, proprt in settings_description.iteritems():
+                print("{0}: {1}\ndoc: {2}/{3}\n--".format(sett, proprt["help"], url_wiki_base, proprt["url"]))
+
+        elif "--show-settings" in args:
+            do_not_exit = True
+            print_message("Settings: " + str(json.dumps(settings, indent=2)))
+
+        else:
+            print("Hi. You should provide at least three arguments.\n"
+                  "1. Read main page and/or wiki: {0} + {1}\n"
+                  "2. Public Telegram group (discussion): {2}\n"
+                  "3. Public Telegram channel: {3}\n"
+                  "4. Try dev branch for test purposes (new features, etc): {0}/tree/dev"
+                  .format(url_github, url_wiki_base, url_tg_group, url_tg_channel))
+        if not do_not_exit:
+            sys.exit(0)
+
 
     zbx_to = args[1]
     zbx_subject = args[2]
@@ -495,63 +582,15 @@ def main():
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
 
-    settings = {
-        "zbxtg_itemid": "0",  # itemid for graph
-        "zbxtg_title": None,  # title for graph
-        "zbxtg_image_period": "3600",
-        "zbxtg_image_width": "900",
-        "zbxtg_image_height": "200",
-        "tg_method_image": False,  # if True - default send images, False - send text
-        "tg_chat": False,  # send message to chat or in private
-        "tg_group": False,  # send message to chat or in private
-        "is_debug": False,
-        "is_channel": False,
-        "disable_web_page_preview": False,
-        "location": None,  # address
-        "lat": 0,  # latitude
-        "lon": 0,  # longitude
-        "is_single_message": False,
-        "markdown": False,
-        "html": False,
-        "signature": False,
-        "signature_disable": False,
-        "graph_buttons": False,
-        "extimg": None,
-        "to": None,
-        "to_group": None,
-        "forked": False,
-    }
-    settings_description = {
-        "itemid": {"name": "zbxtg_itemid", "type": "list"},
-        "title": {"name": "zbxtg_title", "type": "str"},
-        "graphs_period": {"name": "zbxtg_image_period", "type": "int"},
-        "graphs_width": {"name": "zbxtg_image_width", "type": "int"},
-        "graphs_height": {"name": "zbxtg_image_height", "type": "int"},
-        "graphs": {"name": "tg_method_image", "type": "bool"},
-        "chat": {"name": "tg_chat", "type": "bool"},
-        "group": {"name": "tg_group", "type": "bool"},
-        "debug": {"name": "is_debug", "type": "bool"},
-        "channel": {"name": "is_channel", "type": "bool"},
-        "disable_web_page_preview": {"name": "disable_web_page_preview", "type": "bool"},
-        "location": {"name": "location", "type": "str"},
-        "lat": {"name": "lat", "type": "str"},
-        "lon": {"name": "lon", "type": "str"},
-        "single_message": {"name": "is_single_message", "type": "bool"},
-        "markdown": {"name": "markdown", "type": "bool"},
-        "html": {"name": "html", "type": "bool"},
-        "signature": {"name": "signature", "type": "bool"},
-        "signature_disable": {"name": "signature_disable", "type": "bool"},
-        "graph_buttons": {"name": "graph_buttons", "type": "bool"},
-        "external_image": {"name": "extimg", "type": "str"},
-        "to": {"name": "to", "type": "str"},
-        "to_group": {"name": "to_group", "type": "str"},
-        "forked": {"name": "forked", "type": "bool"},
-    }
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
             setting = re.split("[\s:=]+", line, maxsplit=1)
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
+            if key not in settings_description:
+                if "--debug" in args:
+                    print_message("[ERROR] There is no '{0}' method, use --features to get help")
+                continue
             if settings_description[key]["type"] == "list":
                 value = setting[1].split(",")
             elif len(setting) > 1 and len(setting[1]) > 0:
@@ -574,12 +613,12 @@ def main():
     is_single_message = bool(settings["is_single_message"])
 
     # experimental way to send message to the group https://github.com/ableev/Zabbix-in-Telegram/issues/15
-    if sys.argv[0].split("/")[-1] == "zbxtg_group.py" or "--group" in sys.argv or tg_chat or tg_group:
+    if args[0].split("/")[-1] == "zbxtg_group.py" or "--group" in args or tg_chat or tg_group:
         tg_chat = True
         tg_group = True
         tg.type = "group"
 
-    if "--debug" in sys.argv or is_debug:
+    if "--debug" in args or is_debug:
         is_debug = True
         tg.debug = True
         zbx.debug = True
@@ -588,21 +627,21 @@ def main():
         log_file = tmp_dir + ".debug." + hash_ts + ".log"
         #print_message(log_file)
 
-    if "--markdown" in sys.argv or settings["markdown"]:
+    if "--markdown" in args or settings["markdown"]:
         tg.markdown = True
 
-    if "--html" in sys.argv or settings["html"]:
+    if "--html" in args or settings["html"]:
         tg.html = True
 
-    if "--channel" in sys.argv or is_channel:
+    if "--channel" in args or is_channel:
         tg.type = "channel"
 
-    if "--disable_web_page_preview" in sys.argv or disable_web_page_preview:
+    if "--disable_web_page_preview" in args or disable_web_page_preview:
         if is_debug:
             print_message("'disable_web_page_preview' option has been enabled")
         tg.disable_web_page_preview = True
 
-    if "--graph_buttons" in sys.argv or settings["graph_buttons"]:
+    if "--graph_buttons" in args or settings["graph_buttons"]:
         tg.image_buttons = True
 
     if "--forked" in args:
@@ -619,9 +658,6 @@ def main():
                 settings["lat"] = location_coordinates["latitude"]
                 settings["lon"] = location_coordinates["longitude"]
                 tg.location = location_coordinates
-
-    if "--show-settings" in sys.argv and is_debug:
-        print_message("Settings: " + str(json.dumps(settings, indent=2)))
 
     if not os.path.isdir(tmp_dir):
         if is_debug:
@@ -694,8 +730,8 @@ def main():
 
     # add signature, turned off by default, you can turn it on in config
     try:
-        if "--signature" in sys.argv or settings["signature"] or zbxtg_settings.zbx_tg_signature\
-                and not "--signature_disable" in sys.argv and not settings["signature_disable"]:
+        if "--signature" in args or settings["signature"] or zbxtg_settings.zbx_tg_signature\
+                and not "--signature_disable" in args and not settings["signature_disable"]:
             zbxtg_body_text.append("--")
             zbxtg_body_text.append(zbxtg_settings.zbx_server)
     except:
@@ -711,26 +747,40 @@ def main():
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
-    result = None
-
-    if not is_single_message and not result:
-        result = tg.send_message(uid, zbxtg_body_text)
-        if not result["ok"]:
-            if result["description"].find("migrated") > -1 and result["description"].find("supergroup") > -1:
-
-                migrate_to_chat_id = result["parameters"]["migrate_to_chat_id"]
+    if not is_single_message:
+        tg.send_message(uid, zbxtg_body_text)
+        if not tg.ok:
+            # first case – if group has been migrated to a supoergroup, we need to update chat_id of that group
+            if tg.error.find("migrated") > -1 and tg.error.find("supergroup") > -1:
+                migrate_to_chat_id = tg.result["parameters"]["migrate_to_chat_id"]
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
                                                                         "updating cache file")
                 uid = migrate_to_chat_id
-                result = tg.send_message(uid, zbxtg_body_text)
+                tg.send_message(uid, zbxtg_body_text)
+
+            # another case if markdown is enabled and we got parse error, try to remove "bad" symbols from message
+            if tg.markdown and tg.error.find("Can't find end of the entity starting at byte offset") > -1:
+                markdown_fix_attempts = 0
+                while not tg.ok and markdown_fix_attempts != 10:
+                    offset = re.search("Can't find end of the entity starting at byte offset ([0-9]+)", tg.error).group(1)
+                    zbxtg_body_text = markdown_fix(zbxtg_body_text, offset)
+                    tg.send_message(uid, zbxtg_body_text)
+                    markdown_fix_attempts += 1
+                if tg.ok:
+                    print_message("Original message has been fixed due to {0}"
+                                  .format(url_wiki_base + "/" + settings_description["markdown"]["url"]))
 
     if is_debug:
-        print(result)
+        print(tg.result)
 
+    message_id = 0
     if tg_method_image:
         zbx.login()
         if not zbx.cookie:
-            print_message("Login to Zabbix web UI has failed, check manually...")
+            text_warn = "Login to Zabbix web UI has failed (web url, user or password are incorrect), "\
+                        "unable to send graphs check manually"
+            tg.send_message(uid, [text_warn])
+            print_message(text_warn)
         else:
             if not settings["extimg"]:
                 zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
@@ -739,35 +789,46 @@ def main():
             else:
                 zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
-            if result:
-                message_id = result["result"]["message_id"]
-            else:
-                message_id = 0
+            if tg.ok:
+                message_id = tg.result["result"]["message_id"]
             tg.reply_to_message_id = message_id
-            if not is_single_message:
-                tg.disable_notification = True
             if not zbxtg_file_img:
-                tg.send_message(uid, ["Can't get graph image, check script manually, see logs, or disable graphs"])
-                print_message("Can't get image, check URL manually")
+                text_warn = "Can't get graph image, check script manually, see logs, or disable graphs"
+                tg.send_message(uid, [text_warn])
+                print_message(text_warn)
             else:
                 if not is_single_message:
                     zbxtg_body_text = ""
                 else:
                     if is_modified:
-                        print_message("probably you will see MEDIA_CAPTION_TOO_LONG error, "
-                                      "the message has been cut to 200 symbols, "
-                                      "https://github.com/ableev/Zabbix-in-Telegram/issues/9"
-                                      "#issuecomment-166895044")
-                result = tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
-                if result:
+                        text_warn = "probably you will see MEDIA_CAPTION_TOO_LONG error, "\
+                                    "the message has been cut to 200 symbols, "\
+                                    "https://github.com/ableev/Zabbix-in-Telegram/issues/9"\
+                                    "#issuecomment-166895044"
+                        print_message(text_warn)
+                if not is_single_message:
+                    tg.disable_notification = True
+                tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
+                if tg.ok:
                     settings["zbxtg_body_text"] = zbxtg_body_text
-                    file_append(tmp_messages_graphs, "{0}: {1},".format(tg.reply_to_message_id, settings))
+                    file_append(tmp_messages_graphs, "{0}: {1},".format(str(tg.reply_to_message_id), settings))
                     os.remove(zbxtg_file_img)
+                else:
+                    if tg.error.find("PHOTO_INVALID_DIMENSIONS") > -1:
+                        if not tg.disable_web_page_preview:
+                            tg.disable_web_page_preview = True
+                        text_warn = "Zabbix user couldn't get graph (probably has no rights to get data from host), " \
+                                    "check script manually, see {0}".format(url_wiki_base + "/" +
+                                                                            settings_description["graphs"]["url"])
+                        tg.send_message(uid, [text_warn])
+                        print_message(text_warn)
     if tg.location and location_coordinates["latitude"] and location_coordinates["longitude"]:
-        tg.reply_to_message_id = message_id_last
+        tg.reply_to_message_id = message_id
         tg.disable_notification = True
         tg.send_location(to=uid, coordinates=location_coordinates)
 
+    if "--show-settings" in args:
+        print_message("Settings: " + str(json.dumps(settings, indent=2)))
 
 if __name__ == "__main__":
     main()
