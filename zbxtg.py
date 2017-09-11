@@ -217,9 +217,8 @@ class TelegramAPI:
             print_message("Trying to /sendLocation:")
             print_message(url)
             print_message("post params: " + str(params))
-        res = requests.post(url, params=params, proxies=self.proxies)
-        answer = res.text
-        self.result = json.loads(answer.decode('utf8'))
+        answer = requests.post(url, params=params, proxies=self.proxies)
+        self.result = answer.json()
         self.ok_update()
         return self.result
 
