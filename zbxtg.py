@@ -787,9 +787,9 @@ def main():
             if not settings["extimg"]:
                 zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                                settings["zbxtg_title"], settings["zbxtg_image_width"],
-                                               settings["zbxtg_image_height"], tmp_dir)
+                                               settings["zbxtg_image_height"])
             else:
-                zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=tmp_dir)
+                zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=zbx.tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             if tg.ok:
                 message_id = tg.result["result"]["message_id"]
