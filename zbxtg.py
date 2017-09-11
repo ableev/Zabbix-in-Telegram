@@ -44,6 +44,7 @@ class TelegramAPI:
         self.disable_web_page_preview = False
         self.disable_notification = False
         self.reply_to_message_id = 0
+        self.tmp_dir = None
         self.tmp_uids = None
         self.location = {"latitude": None, "longitude": None}
         self.update_offset = 0
@@ -143,7 +144,7 @@ class TelegramAPI:
         return self.result
 
     def send_txt(self, to, text, path):
-        path = tg.tm
+        path = self.tmp_uids
         url = self.tg_url_bot_general + self.key + "/sendDocument"
         text = "\n".join(text)
         params = {"chat_id": to, "caption": path.split("/")[-1], "disable_notification": self.disable_notification}
@@ -262,17 +263,17 @@ class ZabbixAPI:
         self.cookie = None
         self.basic_auth_user = None
         self.basic_auth_pass = None
+        self.tmp_dir = None
 
     def login(self):
-
         if not self.verify:
             requests.packages.urllib3.disable_warnings()
 
         data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
-        req_cookie = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify,
-                                   auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
-        cookie = req_cookie.cookies
-        if len(req_cookie.history) > 1 and req_cookie.history[0].status_code == 302:
+        answer = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify,
+                               auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
+        cookie = answer.cookies
+        if len(answer.history) > 1 and answer.history[0].status_code == 302:
             print_message("probably the server in your config file has not full URL (for example "
                           "'{0}' instead of '{1}')".format(self.server, self.server + "/zabbix"))
         if not cookie:
@@ -281,8 +282,8 @@ class ZabbixAPI:
 
         self.cookie = cookie
 
-    def graph_get(self, itemid, period, title, width, height, tmp_dir):
-        file_img = tmp_dir + "/{0}.png".format("".join(itemid))
+    def graph_get(self, itemid, period, title, width, height):
+        file_img = self.tmp_dir + "/{0}.png".format("".join(itemid))
 
         title = requests.utils.quote(title)
 
@@ -312,7 +313,7 @@ class ZabbixAPI:
         if self.debug:
             print_message(zbx_img_url)
         answer = requests.get(zbx_img_url, cookies=self.cookie, proxies=self.proxies, verify=self.verify,
-                           auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
+                              auth=requests.auth.HTTPBasicAuth(self.basic_auth_user, self.basic_auth_pass))
         status_code = answer.status_code
         if status_code == 404:
             print_message("can't get image from '{0}'".format(zbx_img_url))
@@ -541,6 +542,7 @@ def main():
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
+    tg.tmp_dir = tmp_dir
     tg.tmp_uids = tmp_uids
 
     if zbxtg_settings.proxy_to_tg:
@@ -582,7 +584,6 @@ def main():
 
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
-
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
@@ -751,7 +752,7 @@ def main():
     if not is_single_message:
         tg.send_message(uid, zbxtg_body_text)
         if not tg.ok:
-            # first case – if group has been migrated to a supoergroup, we need to update chat_id of that group
+            # first case – if group has been migrated to a supergroup, we need to update chat_id of that group
             if tg.error.find("migrated") > -1 and tg.error.find("supergroup") > -1:
                 migrate_to_chat_id = tg.result["parameters"]["migrate_to_chat_id"]
                 tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
