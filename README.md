@@ -42,7 +42,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 
  * **Note that Zabbix 3.0 has different settings for that step, see it there**: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
  * Send a message to your bot via Telegram, e.g. "/start"
-  * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
+  * If you are in group chat, start a conversation with your bot: `/start@ZbxTgDevBot`
  * Create a new action like this:
 ```
 Last value: {ITEM.LASTVALUE1} ({TIME})
