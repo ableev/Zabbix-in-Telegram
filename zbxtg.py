@@ -553,6 +553,8 @@ def main():
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
 
+    zbx.tmp_dir = tmp_dir
+
     if zbxtg_settings.proxy_to_zbx:
         zbx.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
