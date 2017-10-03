@@ -700,7 +700,7 @@ def main():
         try:
             if settings[t] and not settings["forked"]:
                 # zbx_to = settings["to"]
-                multiple_to[t] = re.split("[\s,]+", settings[t])
+                multiple_to[t] = re.split(",", settings[t])
         except KeyError:
             pass
 
