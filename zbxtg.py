@@ -691,32 +691,39 @@ def main():
 
     done_all_work_in_the_fork = False
     # issue75
-    if settings["to"] and not settings["forked"]:
-        # zbx_to = settings["to"]
-        multiple_to = re.split("[\s,]+", settings["to"])
-        for i in multiple_to:
-            args_new = list(args)
-            args_new[1] = i
-            args_new.append("--forked")
-            args_new.insert(0, sys.executable)
-            if is_debug:
-                print_message("Fork for custom recipient, new args: {0}".format(args_new))
-            subprocess.call(args_new)
-            done_all_work_in_the_fork = True
 
-    if settings["to_group"] and not settings["forked"]:
-        # zbx_to = settings["to"]
-        multiple_to_group = re.split("[\s,]+", settings["to_group"])
-        for i in multiple_to_group:
-            args_new = list(args)
-            args_new[1] = i
-            args_new.append("--group")
-            args_new.append("--forked")
-            args_new.insert(0, sys.executable)
-            if is_debug:
-                print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
-            subprocess.call(args_new)
-            done_all_work_in_the_fork = True
+    to_types = ["to", "to_group", "to_channel"]
+    to_types_to_telegram = {"to": "private", "to_group": "group", "to_channel": "channel"}
+    multiple_to = {i: [] for i in to_types}
+
+    for t in to_types:
+        try:
+            if settings[t] and not settings["forked"]:
+                # zbx_to = settings["to"]
+                multiple_to[t] = re.split("[\s,]+", settings[t])
+        except KeyError:
+            pass
+
+    if (sum([len(v) for k, v in multiple_to.iteritems()])) == 1:
+        tmp_max = 0
+        for t in to_types:
+            if len(multiple_to[t]) > tmp_max:
+                tmp_max = len(multiple_to[t])
+                tg.type = to_types_to_telegram[t]
+                zbx_to = multiple_to[t][0]
+    else:
+        for t in to_types:
+            for i in multiple_to[t]:
+                args_new = list(args)
+                args_new[1] = i
+                if t == "group":
+                    args_new.append("--group")
+                args_new.append("--forked")
+                args_new.insert(0, sys.executable)
+                if is_debug:
+                    print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
+                subprocess.call(args_new)
+                done_all_work_in_the_fork = True
 
     if done_all_work_in_the_fork:
         sys.exit(0)
