@@ -716,12 +716,13 @@ def main():
             for i in multiple_to[t]:
                 args_new = list(args)
                 args_new[1] = i
-                if t == "group":
+                if t == "to_group":
                     args_new.append("--group")
                 args_new.append("--forked")
                 args_new.insert(0, sys.executable)
                 if is_debug:
-                    print_message("Fork for custom recipient (group), new args: {0}".format(args_new))
+                    print_message("Fork for custom recipient ({1}), new args: {0}".format(args_new,
+                                                                                          to_types_to_telegram[t]))
                 subprocess.call(args_new)
                 done_all_work_in_the_fork = True
 
