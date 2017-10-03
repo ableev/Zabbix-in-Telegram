@@ -88,9 +88,10 @@ class TelegramAPI:
             print_message(url)
             print_message("post params: " + str(params))
         answer = requests.post(url, params=params, proxies=self.proxies)
-        # if answer.status_code == 414:
-        #     print("dafuq")
-        self.result = answer.json()
+        if answer.status_code == 414:
+            self.result = {"ok": False, "description": "414 URI Too Long"}
+        else:
+            self.result = answer.json()
         self.ok_update()
         return self.result
 
@@ -143,10 +144,16 @@ class TelegramAPI:
         self.ok_update()
         return self.result
 
-    def send_txt(self, to, text, path):
-        path = self.tmp_uids
+    def send_txt(self, to, text, text_name=None):
+        path = self.tmp_dir + "/" + "zbxtg_txt_"
         url = self.tg_url_bot_general + self.key + "/sendDocument"
         text = "\n".join(text)
+        if not text_name:
+            path += "".join(random.choice(string.ascii_lowercase + string.digits) for _ in range(10))
+        else:
+            path += text_name
+        path += ".txt"
+        file_write(path, text)
         params = {"chat_id": to, "caption": path.split("/")[-1], "disable_notification": self.disable_notification}
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
@@ -367,12 +374,14 @@ class Maps:
     # https://developers.google.com/maps/documentation/geocoding/intro
     def __init__(self):
         self.key = None
+        self.proxies = {}
 
     def get_coordinates_by_address(self, address):
         coordinates = {"latitude": 0, "longitude": 0}
         url_api = "https://maps.googleapis.com/maps/api/geocode/json?key={0}&address={1}".format(self.key, address)
         url = url_api
-        result = requests.get(url).json()
+        answer = requests.get(url, proxies=self.proxies)
+        result = answer.json()
         try:
             coordinates_dict = result["results"][0]["geometry"]["location"]
         except:
@@ -580,6 +589,11 @@ def main():
     try:
         if zbxtg_settings.google_maps_api_key:
             map.key = zbxtg_settings.google_maps_api_key
+        if zbxtg_settings.proxy_to_tg:
+            map.proxies = {
+                "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
+                "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
+            }
     except:
         pass
 
