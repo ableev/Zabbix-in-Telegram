@@ -705,7 +705,11 @@ def main():
         except KeyError:
             pass
 
-    if (sum([len(v) for k, v in multiple_to.iteritems()])) == 1:
+    # example:
+    # {'to_channel': ['], 'to': ['usr1', 'usr2', 'usr3'], 'to_group': []}
+
+    if (sum([len(v) for k, v in multiple_to.items()])) == 1:
+        # if we have only one recipient, we don't need fork to send message, just re-write "to" vaiable
         tmp_max = 0
         for t in to_types:
             if len(multiple_to[t]) > tmp_max:
