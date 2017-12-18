@@ -527,7 +527,7 @@ def main():
         do_not_exit = False
         if "--features" in args:
             print("List of available settings, see {0}/Settings\n---".format(url_wiki_base))
-            for sett, proprt in settings_description.iteritems():
+            for sett, proprt in settings_description.items():
                 print("{0}: {1}\ndoc: {2}/{3}\n--".format(sett, proprt["help"], url_wiki_base, proprt["url"]))
 
         elif "--show-settings" in args:
@@ -772,7 +772,7 @@ def main():
         zbxtg_body_text_emoji_support = []
         for l in zbxtg_body_text:
             l_new = l
-            for k, v in zbxtg_settings.emoji_map.iteritems():
+            for k, v in zbxtg_settings.emoji_map.items():
                 l_new = l_new.replace("{{" + k + "}}", v)
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
