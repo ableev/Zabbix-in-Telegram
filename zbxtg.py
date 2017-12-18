@@ -547,7 +547,7 @@ def main():
 
     zbx_to = args[1]
     zbx_subject = args[2]
-    zbx_body = args[3].decode("string_escape")
+    zbx_body = args[3]
 
     tg = TelegramAPI(key=zbxtg_settings.tg_key)
 
