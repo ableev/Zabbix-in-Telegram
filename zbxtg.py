@@ -202,6 +202,7 @@ class TelegramAPI:
             print_message("{0}: {1}".format(message, cache_string))
         with open(self.tmp_uids, "a") as cache_file_uids:
             cache_file_uids.write(cache_string)
+        return True
 
     def get_uid_from_cache(self, name):
         uid = 0
