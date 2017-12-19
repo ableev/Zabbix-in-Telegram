@@ -429,6 +429,23 @@ def external_image_get(url, tmp_dir, timeout=6):
     return file_img
 
 
+def age2sec(age_str):
+    age_sec = 0
+    age_regex = "([0-9]+d)?\s?([0-9]+h)?\s?([0-9]+m)?"
+    age_pattern = re.compile(age_regex)
+    intervals = age_pattern.match(age_str).groups()
+    for i in intervals:
+        if i:
+            metric = i[-1]
+            if metric == "d":
+                age_sec += int(i[0:-1])*86400
+            if metric == "h":
+                age_sec += int(i[0:-1])*3600
+            if metric == "m":
+                age_sec += int(i[0:-1])*60
+    return age_sec
+
+
 def main():
 
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
@@ -452,7 +469,8 @@ def main():
     settings = {
         "zbxtg_itemid": "0",  # itemid for graph
         "zbxtg_title": None,  # title for graph
-        "zbxtg_image_period": "3600",
+        "zbxtg_image_period": None,
+        "zbxtg_image_age": "3600",
         "zbxtg_image_width": "900",
         "zbxtg_image_height": "200",
         "tg_method_image": False,  # if True - default send images, False - send text
@@ -486,6 +504,7 @@ def main():
                    "help": "script will attach a graph with that itemid (could be multiple)", "url": "Graphs"},
         "title": {"name": "zbxtg_title", "type": "str", "help": "title for attached graph", "url": "Graphs"},
         "graphs_period": {"name": "zbxtg_image_period", "type": "int", "help": "graph period", "url": "Graphs"},
+        "graphs_age": {"name": "zbxtg_image_age", "type": "str", "help": "graph period as age", "url": "Graphs"},
         "graphs_width": {"name": "zbxtg_image_width", "type": "int", "help": "graph width", "url": "Graphs"},
         "graphs_height": {"name": "zbxtg_image_height", "type": "int", "help": "graph height", "url": "Graphs"},
         "graphs": {"name": "tg_method_image", "type": "bool", "help": "enables graph sending", "url": "Graphs"},
@@ -802,6 +821,11 @@ def main():
 
     if is_debug:
         print(tg.result)
+
+    if settings["zbxtg_image_age"]:
+        age_sec = age2sec(settings["zbxtg_image_age"])
+        if age_sec > 0:
+            settings["zbxtg_image_period"] = age_sec
 
     message_id = 0
     if tg_method_image:
