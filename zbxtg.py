@@ -824,7 +824,7 @@ def main():
 
     if settings["zbxtg_image_age"]:
         age_sec = age2sec(settings["zbxtg_image_age"])
-        if age_sec > 0:
+        if age_sec > 0 and age_sec > 3600:
             settings["zbxtg_image_period"] = age_sec
 
     message_id = 0
