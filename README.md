@@ -1,19 +1,20 @@
 # Zabbix-in-Telegram
 Zabbix Notifications with graphs in Telegram
 
-Join us in our **Telegram group** via this link: https://telegram.me/ZbxTg
+Join us in our **Telegram group** via this link: https://t.me/ZbxTg
 
-Subscribe to our channel: https://telegram.me/Zabbix_in_Telegram
+Subscribe to our channel: https://t.me/Zabbix_in_Telegram
 
 Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
 
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
-- [x] You can send messages both in private and group chats
-- [x] Channels support
+- [x] You can send messages both in private and group/supergroup chats
+- [x] Channels support (only public)
 - [x] Saves chatid as a temporary file
 - [x] Simple markdown and HTML are supported
-- [x] Emoji in messages
+- [x] Emoji (you can use emoji instead of severity, see [the wiki article](https://github.com/ableev/Zabbix-in-Telegram/wiki/Trigger-severity-as-Emoji))
+- [x] Location map
 
 ### TODOs
 - Simple zabbix's management via bot's commands
@@ -41,7 +42,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 
  * **Note that Zabbix 3.0 has different settings for that step, see it there**: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
  * Send a message to your bot via Telegram, e.g. "/start"
-  * If you are in group chat, just mention your bot, e.g. `@ZbxTgDevBot ping`
+  * If you are in group chat, start a conversation with your bot: `/start@ZbxTgDevBot`
  * Create a new action like this:
 ```
 Last value: {ITEM.LASTVALUE1} ({TIME})
