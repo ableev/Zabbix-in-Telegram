@@ -564,7 +564,7 @@ def main():
             sys.exit(0)
 
 
-    zbx_to = args[1]
+    zbx_to = args[1].lower()
     zbx_subject = args[2]
     zbx_body = args[3]
 
