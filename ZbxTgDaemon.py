@@ -61,9 +61,9 @@ class ZabbixDB():
             "WHERE " + "t.value = 1 " \
             "AND h.status = 0 " \
             "AND t.status = 0 " \
-            "AND i.status = 0 " \
-        if(severity):
-            q += "AND t.priority = {0}" \
+            "AND i.status = 0 "
+        if severity:
+            q += "AND t.priority = {0} " \
                  "GROUP BY t.triggerid;".format(severity)
         else:
             q += "AND t.priority > 0 " \
