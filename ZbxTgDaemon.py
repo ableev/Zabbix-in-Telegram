@@ -48,7 +48,7 @@ class ZabbixDB():
 
         return result
 
-    def triggers(self):
+    def triggers(self, severity):
         q = "SELECT h.name AS host, h.hostid AS hostid, t.triggerid," \
             "t.description AS `trigger`, t.priority AS severity, t.lastchange " \
             "FROM triggers t " \
@@ -58,12 +58,16 @@ class ZabbixDB():
             "LEFT JOIN hosts_groups hg ON h.hostid = hg.hostid " \
             "LEFT JOIN groups g ON hg.groupid = g.groupid " \
             "LEFT JOIN interface ifa ON h.hostid = ifa.hostid AND ifa.main = 1 " \
-            "WHERE t.value = 1 " \
+            "WHERE " + "t.value = 1 " \
             "AND h.status = 0 " \
             "AND t.status = 0 " \
             "AND i.status = 0 " \
-            "AND t.priority > 0 " \
-            "GROUP BY t.triggerid;"
+        if(severity):
+            q += "AND t.priority = {0}" \
+                 "GROUP BY t.triggerid;".format(severity)
+        else:
+            q += "AND t.priority > 0 " \
+                 "GROUP BY t.triggerid;"
         print q
         result = self.db_query(q)
         return result
@@ -191,7 +195,8 @@ def main():
                     #print type(message_id_last)
                     if m["message"]["message_id"] > message_id_last:
                         if re.search(r"^/triggers", text):
-                            triggers = zbxdb.triggers()
+                            severity = text[10:]
+                            triggers = zbxdb.triggers(severity)
                             if triggers:
                                 for t in triggers:
                                     reply_text.append("Severity: {0}, Host: {1}, Trigger: {2}".format(
