@@ -24,8 +24,11 @@ zbx_basic_auth_pass = "zabbix"
 proxy_to_zbx = None
 proxy_to_tg = None
 
-#proxy_to_zbx = "proxy.local:3128"
-#proxy_to_tg = "proxy.local:3128"
+# proxy_to_zbx = "http://proxy.local:3128"
+# proxy_to_tg = "https://proxy.local:3128"
+
+# proxy_to_tg = "socks5://user1:password2@hostname:port" # socks5 with username and password
+# proxy_to_tg = "socks5://hostname:port" # socks5 without username and password
 
 google_maps_api_key = None  # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
 

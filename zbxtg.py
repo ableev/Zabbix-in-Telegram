@@ -574,9 +574,11 @@ def main():
     tg.tmp_uids = tmp_uids
 
     if zbxtg_settings.proxy_to_tg:
+        proxy_to_tg = zbxtg_settings.proxy_to_tg
+        if not proxy_to_tg.find("http") and not proxy_to_tg.find("socks"):
+            proxy_to_tg = "https://" + proxy_to_tg
         tg.proxies = {
-            "http": "http://{0}/".format(zbxtg_settings.proxy_to_tg),
-            "https": "https://{0}/".format(zbxtg_settings.proxy_to_tg)
+            "https": "{0}".format(zbxtg_settings.proxy_to_tg),
         }
 
     zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
