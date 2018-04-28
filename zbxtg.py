@@ -716,7 +716,9 @@ def main():
 
     to_types = ["to", "to_group", "to_channel"]
     to_types_to_telegram = {"to": "private", "to_group": "group", "to_channel": "channel"}
-    multiple_to = {i: [] for i in to_types}
+    multiple_to = {}
+    for i in to_types:
+        multiple_to[i]=[]
 
     for t in to_types:
         try:
