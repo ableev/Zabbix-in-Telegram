@@ -178,11 +178,13 @@ class TelegramAPI:
                 chat = m["message"]["chat"]
             elif "edited_message" in m:
                 chat = m["edited_message"]["chat"]
+            elif "channel_post" in m:
+                chat = m["channel_post"]["chat"]
             if chat["type"] == self.type == "private":
                 if "username" in chat:
                     if chat["username"] == name:
                         uid = chat["id"]
-            if (chat["type"] == "group" or chat["type"] == "supergroup") and self.type == "group":
+            if (chat["type"] == "group" or chat["type"] == "supergroup" or chat["type"] == "channel") and self.type == "group":
                 if "title" in chat:
                     if chat["title"] == name.decode("utf-8"):
                         uid = chat["id"]
