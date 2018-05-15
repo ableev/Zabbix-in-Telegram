@@ -178,6 +178,8 @@ class TelegramAPI:
                 chat = m["message"]["chat"]
             elif "edited_message" in m:
                 chat = m["edited_message"]["chat"]
+            else:
+                continue
             if chat["type"] == self.type == "private":
                 if "username" in chat:
                     if chat["username"] == name:
@@ -205,6 +207,8 @@ class TelegramAPI:
         return True
 
     def get_uid_from_cache(self, name):
+        if self.debug:
+            print "Trying to read cached uid for {0}, {1}, from {2}".format(name, self.type, self.tmp_uids)
         uid = 0
         if os.path.isfile(self.tmp_uids):
             with open(self.tmp_uids, 'r') as cache_file_uids:
