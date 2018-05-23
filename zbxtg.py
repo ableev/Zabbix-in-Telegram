@@ -87,6 +87,7 @@ class TelegramAPI:
             print_message("Trying to /sendMessage:")
             print_message(url)
             print_message("post params: " + str(params))
+	    print_message("Message: "+str(message))
         answer = requests.post(url, params=params, proxies=self.proxies)
         if answer.status_code == 414:
             self.result = {"ok": False, "description": "414 URI Too Long"}
@@ -486,7 +487,7 @@ def main():
         "location": None,  # address
         "lat": 0,  # latitude
         "lon": 0,  # longitude
-        "is_single_message": False,
+        "is_single_message": True,
         "markdown": False,
         "html": False,
         "signature": False,
@@ -625,6 +626,7 @@ def main():
 
     zbxtg_body = (zbx_subject + "\n" + zbx_body).splitlines()
     zbxtg_body_text = []
+    zbxtg_body_text_cut = []
 
     for line in zbxtg_body:
         if line.find(zbxtg_settings.zbx_tg_prefix) > -1:
@@ -850,7 +852,7 @@ def main():
                                                settings["zbxtg_image_height"])
             else:
                 zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=zbx.tmp_dir)
-            zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
+            zbxtg_body_text_cut, is_modified = list_cut(zbxtg_body_text, 200)
             if tg.ok:
                 message_id = tg.result["result"]["message_id"]
             tg.reply_to_message_id = message_id
@@ -861,16 +863,20 @@ def main():
             else:
                 if not is_single_message:
                     zbxtg_body_text = ""
-                else:
-                    if is_modified:
-                        text_warn = "probably you will see MEDIA_CAPTION_TOO_LONG error, "\
-                                    "the message has been cut to 200 symbols, "\
-                                    "https://github.com/ableev/Zabbix-in-Telegram/issues/9"\
-                                    "#issuecomment-166895044"
-                        print_message(text_warn)
+               # else:
+               #     if is_modified:
+               #         text_warn = "probably you will see MEDIA_CAPTION_TOO_LONG error, "\
+               #                     "the message has been cut to 200 symbols, "\
+               #                     "https://github.com/ableev/Zabbix-in-Telegram/issues/9"\
+               #                     "#issuecomment-166895044"
+               #        print_message(text_warn)
                 if not is_single_message:
                     tg.disable_notification = True
-                tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
+                if is_modified:
+			tg.send_photo(uid, "" , zbxtg_file_img)
+			tg.send_message(uid,zbxtg_body_text_cut)
+		else:
+			tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
                 if tg.ok:
                     settings["zbxtg_body_text"] = zbxtg_body_text
                     file_append(tmp_messages_graphs, "{0}: {1},".format(str(tg.reply_to_message_id), settings))
