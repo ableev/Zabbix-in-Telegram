@@ -208,7 +208,7 @@ class TelegramAPI:
 
     def get_uid_from_cache(self, name):
         if self.debug:
-            print "Trying to read cached uid for {0}, {1}, from {2}".format(name, self.type, self.tmp_uids)
+            print_message("Trying to read cached uid for {0}, {1}, from {2}".format(name, self.type, self.tmp_uids))
         uid = 0
         if os.path.isfile(self.tmp_uids):
             with open(self.tmp_uids, 'r') as cache_file_uids:
