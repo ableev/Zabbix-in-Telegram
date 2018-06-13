@@ -29,6 +29,9 @@ proxy_to_tg = None
 
 # proxy_to_tg = "socks5://user1:password2@hostname:port" # socks5 with username and password
 # proxy_to_tg = "socks5://hostname:port" # socks5 without username and password
+# proxy_to_tg = "socks5h://hostname:port" # hostname resolution on SOCKS proxy. 
+                                          # This helps when internet provider alter DNS queries.
+                                          # Found here: https://stackoverflow.com/a/43266186/957508
 
 google_maps_api_key = None  # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
 
