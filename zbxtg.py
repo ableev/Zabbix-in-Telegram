@@ -557,21 +557,21 @@ def main():
     if len(args) < 4:
         do_not_exit = False
         if "--features" in args:
-            print("List of available settings, see {0}/Settings\n---".format(url_wiki_base))
-            for sett, proprt in settings_description.items():
-                print("{0}: {1}\ndoc: {2}/{3}\n--".format(sett, proprt["help"], url_wiki_base, proprt["url"]))
+            print(("List of available settings, see {0}/Settings\n---".format(url_wiki_base)))
+            for sett, proprt in list(settings_description.items()):
+                print(("{0}: {1}\ndoc: {2}/{3}\n--".format(sett, proprt["help"], url_wiki_base, proprt["url"])))
 
         elif "--show-settings" in args:
             do_not_exit = True
             print_message("Settings: " + str(json.dumps(settings, indent=2)))
 
         else:
-            print("Hi. You should provide at least three arguments.\n"
+            print(("Hi. You should provide at least three arguments.\n"
                   "1. Read main page and/or wiki: {0} + {1}\n"
                   "2. Public Telegram group (discussion): {2}\n"
                   "3. Public Telegram channel: {3}\n"
                   "4. Try dev branch for test purposes (new features, etc): {0}/tree/dev"
-                  .format(url_github, url_wiki_base, url_tg_group, url_tg_channel))
+                  .format(url_github, url_wiki_base, url_tg_group, url_tg_channel)))
         if not do_not_exit:
             sys.exit(0)
 
@@ -743,7 +743,7 @@ def main():
     # example:
     # {'to_channel': ['], 'to': ['usr1', 'usr2', 'usr3'], 'to_group': []}
 
-    if (sum([len(v) for k, v in multiple_to.items()])) == 1:
+    if (sum([len(v) for k, v in list(multiple_to.items())])) == 1:
         # if we have only one recipient, we don't need fork to send message, just re-write "to" vaiable
         tmp_max = 0
         for t in to_types:
@@ -807,7 +807,7 @@ def main():
         zbxtg_body_text_emoji_support = []
         for l in zbxtg_body_text:
             l_new = l
-            for k, v in zbxtg_settings.emoji_map.items():
+            for k, v in list(zbxtg_settings.emoji_map.items()):
                 l_new = l_new.replace("{{" + k + "}}", v)
             zbxtg_body_text_emoji_support.append(l_new)
         zbxtg_body_text = zbxtg_body_text_emoji_support
@@ -836,7 +836,7 @@ def main():
                                   .format(url_wiki_base + "/" + settings_description["markdown"]["url"]))
 
     if is_debug:
-        print(tg.result)
+        print((tg.result))
 
     if settings["zbxtg_image_age"]:
         age_sec = age2sec(settings["zbxtg_image_age"])
