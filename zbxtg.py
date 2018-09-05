@@ -271,7 +271,7 @@ def markdown_fix(message, offset):
     return message
 
 
-class ZabbixAPI:
+class ZabbixWeb:
     def __init__(self, server, username, password):
         self.debug = False
         self.server = server
@@ -467,7 +467,6 @@ def main():
 
     tmp_cookie = tmp_dir + "/cookie.py.txt"
     tmp_uids = tmp_dir + "/uids.txt"
-    tmp_messages_graphs = tmp_dir + "/mg.txt"
     tmp_need_update = False  # do we need to update cache file with uids or not
 
     rnd = random.randint(0, 999)
@@ -593,7 +592,7 @@ def main():
             "https": "{0}".format(zbxtg_settings.proxy_to_tg),
         }
 
-    zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
+    zbx = ZabbixWeb(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
 
     zbx.tmp_dir = tmp_dir
@@ -881,7 +880,6 @@ def main():
                 tg.send_photo(uid, zbxtg_body_text, zbxtg_file_img)
                 if tg.ok:
                     settings["zbxtg_body_text"] = zbxtg_body_text
-                    file_append(tmp_messages_graphs, "{0}: {1},".format(str(tg.reply_to_message_id), settings))
                     os.remove(zbxtg_file_img)
                 else:
                     if tg.error.find("PHOTO_INVALID_DIMENSIONS") > -1:
