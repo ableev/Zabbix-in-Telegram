@@ -4,72 +4,27 @@
 import sys
 import os
 import hashlib
-import time
-import random
-import requests
-import json
 import re
-import stat
 import time
-import MySQLdb
 from os.path import dirname
 import zbxtg_settings
 import zbxtg
+from pyzabbix import ZabbixAPI, ZabbixAPIException
 
 
-class ZabbixDB():
-    def __init__(self, host, database, user, password):
-        self.host = host
-        self.database = database
+class zabbixApi():
+    def __init__(self, server, user, password):
+        self.api = ZabbixAPI(server)
         self.user = user
         self.password = password
 
-    def connect(self):
-        db = MySQLdb.connect(host=self.host,
-                             user=self.user,
-                             passwd=self.password,
-                             db=self.database,
-                             charset='utf8',
-                             init_command='SET NAMES UTF8')
+    def login(self):
+        self.api.login(self.user, self.password)
 
-        self.sql = db.cursor(MySQLdb.cursors.DictCursor)
-        self.sql.connection.autocommit(True)
+    def triggers_active(self):
+        return self.api.trigger.get(output="extend", monitored=True, filter={"value": 1}, sortfield="priority", sortorder="DESC",
+                                    selectHosts="extend")
 
-    def db_query(self, query):
-
-        result = None
-
-        try:
-            self.sql.execute(query)
-            result = list(self.sql.fetchall())
-
-        except self.sql.Error, err:
-            print "ERROR %d: %s" % (err.args[0], err.args[1])
-
-        return result
-
-    def triggers(self):
-        q = "SELECT h.name AS host, h.hostid AS hostid, t.triggerid," \
-            "t.description AS `trigger`, t.priority AS severity, t.lastchange " \
-            "FROM triggers t " \
-            "LEFT JOIN functions f ON t.triggerid = f.triggerid " \
-            "LEFT JOIN items i ON f.itemid = i.itemid " \
-            "LEFT JOIN hosts h ON i.hostid = h.hostid " \
-            "LEFT JOIN hosts_groups hg ON h.hostid = hg.hostid " \
-            "LEFT JOIN groups g ON hg.groupid = g.groupid " \
-            "LEFT JOIN interface ifa ON h.hostid = ifa.hostid AND ifa.main = 1 " \
-            "WHERE t.value = 1 " \
-            "AND h.status = 0 " \
-            "AND t.status = 0 " \
-            "AND i.status = 0 " \
-            "AND t.priority > 0 " \
-            "GROUP BY t.triggerid;"
-        print q
-        result = self.db_query(q)
-        return result
-
-    def close(self):
-        self.sql.close()
 
 
 def print_message(string):
@@ -91,14 +46,12 @@ def file_read(filename):
 
 
 def main():
-
-
     TelegramAPI = zbxtg.TelegramAPI
-    ZabbixAPI = zbxtg.ZabbixAPI
+    ZabbixWeb = zbxtg.ZabbixWeb
     tmp_dir = zbxtg_settings.zbx_tg_tmp_dir
 
     if not zbxtg_settings.zbx_tg_daemon_enabled:
-        print("You should enable daemon by adding 'zbx_tg_remote_control' into configuration")
+        print("You should enable daemon by adding 'zbx_tg_remote_control' in the configuration file")
         sys.exit(1)
 
     tmp_uids = tmp_dir + "/uids.txt"
@@ -123,7 +76,7 @@ def main():
     if zbxtg_settings.proxy_to_tg:
         tg.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_tg)}
 
-    zbx = ZabbixAPI(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
+    zbx = ZabbixWeb(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
                     password=zbxtg_settings.zbx_api_pass)
     if zbxtg_settings.proxy_to_zbx:
         zbx.proxies = {"http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx)}
@@ -134,21 +87,19 @@ def main():
     except:
         pass
 
-    zbxdb = ZabbixDB(host=zbxtg_settings.zbx_db_host, database=zbxtg_settings.zbx_db_database,
-                   user=zbxtg_settings.zbx_db_user, password=zbxtg_settings.zbx_db_password)
+    zbxapi = zabbixApi(zbxtg_settings.zbx_server, zbxtg_settings.zbx_api_user, zbxtg_settings.zbx_api_pass)
+    zbxapi.login()
 
-    zbxdb.connect()
+    print(tg.get_me())
 
-    print tg.get_me()
-
-    hosts = zbxdb.db_query("SELECT hostid, host FROM hosts")
+    #hosts = zbxdb.db_query("SELECT hostid, host FROM hosts")
 
     commands = [
-        "graphs_on_host",
-        "graph_get",
-        "graphs_by_item",
-        "hosts",
-        "triggers",
+        "/triggers",
+        "/help",
+        # "/graph",
+        # "/history",
+        # "/screen"
     ]
 
     def md5(fname):
@@ -169,43 +120,47 @@ def main():
                 sys.exit(1)
             tg.update_offset = update_id
             updates = tg.get_updates()
-            #print updates
             if not updates["result"]:
                 continue
             for m in updates["result"]:
+                if "message" not in m:
+                    continue
                 update_id_last = m["update_id"]
-                print update_id_last
                 tg.update_offset = update_id_last
-                if m["message"]["from"]["id"] not in zbxtg_settings.zbx_tg_daemon_wl_ids:
+                if m["message"]["from"]["id"] not in zbxtg_settings.zbx_tg_daemon_enabled_ids:
                     file_write(tmp_ts["update_offset"], update_id_last)
                     continue
-                    print("Fuck this shit")
+                    print("Fuck this shit, I'm not going to answer to someone not from the whitelist")
                 else:
-                    print json.dumps(m)
+                    if not "text" in m["message"]:
+                        continue
                     text = m["message"]["text"]
-                    #print text
                     to = m["message"]["from"]["id"]
                     reply_text = list()
-                    #reply_text.append(text)
-                    #print type(m["message"]["message_id"])
-                    #print type(message_id_last)
                     if m["message"]["message_id"] > message_id_last:
+                        if re.search(r"^/(start|help)", text):
+                            reply_text.append("Hey, this is ZbxTgDaemon bot.")
+                            reply_text.append("https://github.com/ableev/Zabbix-in-Telegram")
+                            reply_text.append("If you need help, you can ask it in @ZbxTg group\n")
+                            reply_text.append("Available commands:")
+                            reply_text.append("\n".join(commands))
+                            tg.disable_web_page_preview = True
                         if re.search(r"^/triggers", text):
-                            triggers = zbxdb.triggers()
+                            triggers = zbxapi.triggers_active()
                             if triggers:
                                 for t in triggers:
                                     reply_text.append("Severity: {0}, Host: {1}, Trigger: {2}".format(
-                                        t["severity"], t["host"].encode('utf-8'), t["trigger"].encode('utf-8')
+                                        t["priority"], t["hosts"][0]["host"].encode('utf-8'), t["description"].encode('utf-8')
                                     ))
                             else:
                                 reply_text.append("There are no triggers, have a nice day!")
-
                         if not reply_text:
                             reply_text = ["I don't know what to do about it"]
                         if tg.send_message(to, reply_text):
                             with open(tmp_ts["message_id"], "w") as message_id_file:
                                 message_id_file.write(str(m["message"]["message_id"]))
                             message_id_last = m["message"]["message_id"]
+                            tg.disable_web_page_preview = False
                 file_write(tmp_ts["update_offset"], update_id_last)
     except KeyboardInterrupt:
         print("Exiting...")
