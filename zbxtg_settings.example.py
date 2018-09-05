@@ -33,8 +33,9 @@ proxy_to_tg = None
 google_maps_api_key = None  # get your key, see https://developers.google.com/maps/documentation/geocoding/intro
 
 zbx_tg_daemon_enabled = False
-zbx_tg_daemon_wl_ids = [6931850, ]
-zbx_tg_daemon_wl_u = ["ableev", ]
+zbx_tg_daemon_enabled_ids = [6931850, ]
+zbx_tg_daemon_enabled_users = ["ableev", ]
+zbx_tg_daemon_enabled_chats = ["Zabbix in Telegram Script", ]
 
 zbx_db_host = "localhost"
 zbx_db_database = "zabbix"
