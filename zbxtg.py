@@ -52,6 +52,7 @@ class TelegramAPI:
         self.result = None
         self.ok = None
         self.error = None
+        self.get_updates_from_file = False
 
     def get_me(self):
         url = self.tg_url_bot_general + self.key + "/getMe"
@@ -65,9 +66,12 @@ class TelegramAPI:
             print_message(url)
         answer = requests.post(url, params=params, proxies=self.proxies)
         self.result = answer.json()
+        if self.get_updates_from_file:
+            print_message("Getting updated from file getUpdates.txt")
+            self.result = json.loads("".join(file_read("getUpdates.txt")))
         if self.debug:
             print_message("Content of /getUpdates:")
-            print_message(self.result)
+            print_message(json.dumps(self.result))
         self.ok_update()
         return self.result
 
