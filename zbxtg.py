@@ -740,7 +740,7 @@ def main():
             pass
 
     # example:
-    # {'to_channel': ['], 'to': ['usr1', 'usr2', 'usr3'], 'to_group': []}
+    # {'to_channel': [], 'to': ['usr1', 'usr2', 'usr3'], 'to_group': []}
 
     if (sum([len(v) for k, v in list(multiple_to.items())])) == 1:
         # if we have only one recipient, we don't need fork to send message, just re-write "to" vaiable
@@ -774,6 +774,9 @@ def main():
         uid = zbx_to
     if tg.type == "private":
         zbx_to = zbx_to.replace("@", "")
+
+    if zbx_to.isdigit():
+        uid = zbx_to
 
     if not uid:
         uid = tg.get_uid_from_cache(zbx_to)
