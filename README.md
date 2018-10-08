@@ -10,7 +10,7 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 ### Features
 - [x] Graphs based on latest data are sent directly to your messenger
 - [x] You can send messages both in private and group/supergroup chats
-- [x] Channels support (only public, but you can do it for private as well with durty hack)
+- [x] Channels support (only public, but you can do it for private as well with dirty hack)
 - [x] Saves chatid as a temporary file
 - [x] Simple markdown and HTML are supported
 - [x] Emoji (you can use emoji instead of severity, see [the wiki article](https://github.com/ableev/Zabbix-in-Telegram/wiki/Trigger-severity-as-Emoji)) (zabbix doesn't support utf8mb4 encoding yet)
