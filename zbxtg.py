@@ -496,7 +496,7 @@ def main():
         "is_single_message": False,
         "markdown": False,
         "html": False,
-        "signature": False,
+        "signature": None,
         "signature_disable": False,
         "graph_buttons": False,
         "extimg": None,
@@ -536,7 +536,7 @@ def main():
                            "url": "Why-am-I-getting-two-messages-instead-of-one"},
         "markdown": {"name": "markdown", "type": "bool", "help": "markdown support", "url": "Markdown-and-HTML"},
         "html": {"name": "html", "type": "bool", "help": "markdown support", "url": "Markdown-and-HTML"},
-        "signature": {"name": "signature", "type": "bool",
+        "signature": {"name": "signature", "type": "str",
                       "help": "bot's signature", "url": "Bot-signature"},
         "signature_disable": {"name": "signature_disable", "type": "bool",
                               "help": "enables/disables bot's signature", "url": "Bot-signature"},
@@ -799,8 +799,12 @@ def main():
     try:
         if "--signature" in args or settings["signature"] or zbxtg_settings.zbx_tg_signature\
                 and not "--signature_disable" in args and not settings["signature_disable"]:
+            if "--signature" in args:
+                settings["signature"] = args[args.index("--signature") + 1]
+            if not settings["signature"]:
+                settings["signature"] = zbxtg_settings.zbx_server
             zbxtg_body_text.append("--")
-            zbxtg_body_text.append(zbxtg_settings.zbx_server)
+            zbxtg_body_text.append(settings["signature"])
     except:
         pass
 
