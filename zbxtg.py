@@ -325,8 +325,8 @@ class ZabbixWeb:
                          "items[{0}][drawtype]={3}&items[{0}][color]={2}".format(i, itemid[i], colors[i], drawtype)
             zbx_img_url_itemids.append(itemid_url)
 
-        zbx_img_url = self.server + "/chart3.php?period={0}&from=now-{0}&to=now" \
-                                    "&name={1}&width={2}&height={3}&graphtype=0&legend=1".format(period, title, width, height)
+        zbx_img_url = self.server + "/chart3.php?period={0}&name={1}" \
+                                    "&width={2}&height={3}&graphtype=0&legend=1".format(period, title, width, height)
         zbx_img_url += "".join(zbx_img_url_itemids)
 
         if self.debug:
