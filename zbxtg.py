@@ -263,8 +263,10 @@ class TelegramAPI:
         return True
 
 
-def markdown_fix(message, offset):
+def markdown_fix(message, offset, emoji=False):
     offset = int(offset)
+    if emoji:  # https://github.com/ableev/Zabbix-in-Telegram/issues/152
+        offset -= 2
     message = "\n".join(message)
     message = message[:offset] + message[offset+1:]
     message = message.split("\n")
@@ -822,6 +824,7 @@ def main():
         pass
 
     # replace text with emojis
+    internal_using_emoji = False  # I hate that, but... https://github.com/ableev/Zabbix-in-Telegram/issues/152
     if hasattr(zbxtg_settings, "emoji_map"):
         zbxtg_body_text_emoji_support = []
         for l in zbxtg_body_text:
@@ -829,6 +832,8 @@ def main():
             for k, v in list(zbxtg_settings.emoji_map.items()):
                 l_new = l_new.replace("{{" + k + "}}", v)
             zbxtg_body_text_emoji_support.append(l_new)
+        if len("".join(zbxtg_body_text)) - len("".join(zbxtg_body_text_emoji_support)):
+            internal_using_emoji = True
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
     if not is_single_message:
@@ -844,15 +849,19 @@ def main():
 
             # another case if markdown is enabled and we got parse error, try to remove "bad" symbols from message
             if tg.markdown and tg.error.find("Can't find end of the entity starting at byte offset") > -1:
+                markdown_warning = "Original message has been fixed due to {0}. " \
+                                   "Please, fix the markdown, it's slowing down messages sending."\
+                    .format(url_wiki_base + "/" + settings_description["markdown"]["url"])
                 markdown_fix_attempts = 0
-                while not tg.ok and markdown_fix_attempts != 10:
+                while not tg.ok and markdown_fix_attempts != 3:
                     offset = re.search("Can't find end of the entity starting at byte offset ([0-9]+)", tg.error).group(1)
-                    zbxtg_body_text = markdown_fix(zbxtg_body_text, offset)
+                    zbxtg_body_text = markdown_fix(zbxtg_body_text, offset, emoji=internal_using_emoji) + \
+                                      ["\n"] + [markdown_warning]
+                    tg.disable_web_page_preview = True
                     tg.send_message(uid, zbxtg_body_text)
                     markdown_fix_attempts += 1
                 if tg.ok:
-                    print_message("Original message has been fixed due to {0}"
-                                  .format(url_wiki_base + "/" + settings_description["markdown"]["url"]))
+                    print_message(markdown_warning)
 
     if is_debug:
         print((tg.result))
