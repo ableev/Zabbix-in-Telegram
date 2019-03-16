@@ -568,8 +568,15 @@ def main():
             do_not_exit = True
             print_message("Settings: " + str(json.dumps(settings, indent=2)))
 
+        # acknowledge message, agrh
+        # https://github.com/ableev/Zabbix-in-Telegram/issues/130
+        elif len(args) == 3:  # probably someone acknowledges a problem
+            do_not_exit = True
+            args.append("")
+
         else:
             print(("Hi. You should provide at least three arguments.\n"
+                   "zbxtg.py [TO] [SUBJECT] [BODY]\n\n"
                   "1. Read main page and/or wiki: {0} + {1}\n"
                   "2. Public Telegram group (discussion): {2}\n"
                   "3. Public Telegram channel: {3}\n"
