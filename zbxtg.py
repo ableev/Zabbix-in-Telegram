@@ -301,7 +301,7 @@ class ZabbixWeb:
 
         self.cookie = cookie
 
-    def graph_get(self, itemid, period, title, width, height):
+    def graph_get(self, itemid, period, title, width, height, version=3):
         file_img = self.tmp_dir + "/{0}.png".format("".join(itemid))
 
         title = requests.utils.quote(title)
@@ -325,8 +325,12 @@ class ZabbixWeb:
                          "items[{0}][drawtype]={3}&items[{0}][color]={2}".format(i, itemid[i], colors[i], drawtype)
             zbx_img_url_itemids.append(itemid_url)
 
-        zbx_img_url = self.server + "/chart3.php?period={0}&name={1}" \
-                                    "&width={2}&height={3}&graphtype=0&legend=1".format(period, title, width, height)
+        zbx_img_url = self.server + "/chart3.php?"
+        if version < 4:
+            zbx_img_url += "period={0}".format(period)
+        else:
+            zbx_img_url += "from=now-{0}&to=now".format(period)
+        zbx_img_url += "&name={0}&width={1}&height={2}&graphtype=0&legend=1".format(title, width, height)
         zbx_img_url += "".join(zbx_img_url_itemids)
 
         if self.debug:
@@ -597,6 +601,14 @@ def main():
 
     zbx.tmp_dir = tmp_dir
 
+    # workaround for Zabbix 4.x
+    zbx_version = 3
+
+    try:
+        zbx_version = zbxtg_settings.zbx_server_version
+    except:
+        pass
+
     if zbxtg_settings.proxy_to_zbx:
         zbx.proxies = {
             "http": "http://{0}/".format(zbxtg_settings.proxy_to_zbx),
@@ -639,7 +651,7 @@ def main():
             key = setting[0].replace(zbxtg_settings.zbx_tg_prefix + ";", "")
             if key not in settings_description:
                 if "--debug" in args:
-                    print_message("[ERROR] There is no '{0}' method, use --features to get help")
+                    print_message("[ERROR] There is no '{0}' method, use --features to get help".format(key))
                 continue
             if settings_description[key]["type"] == "list":
                 value = setting[1].split(",")
@@ -861,7 +873,7 @@ def main():
             if not settings["extimg"]:
                 zbxtg_file_img = zbx.graph_get(settings["zbxtg_itemid"], settings["zbxtg_image_period"],
                                                settings["zbxtg_title"], settings["zbxtg_image_width"],
-                                               settings["zbxtg_image_height"])
+                                               settings["zbxtg_image_height"], version=zbx_version)
             else:
                 zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=zbx.tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
