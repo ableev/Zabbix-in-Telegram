@@ -712,6 +712,9 @@ def main():
     if "--forked" in args:
         settings["forked"] = True
 
+    if "--tg-key" in args:
+        tg.key = args[args.index("--tg-key") + 1]
+
     location_coordinates = {"latitude": None, "longitude": None}
     if settings["lat"] > 0 and settings["lat"] > 0:
         location_coordinates = {"latitude": settings["lat"], "longitude": settings["lon"]}
