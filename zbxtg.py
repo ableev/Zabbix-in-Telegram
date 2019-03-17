@@ -344,8 +344,7 @@ class ZabbixWeb:
             print_message("can't get image from '{0}'".format(zbx_img_url))
             return False
         res_img = answer.content
-        with open(file_img, 'wb') as fp:
-            fp.write(res_img)
+        file_bwrite(file_img, res_img)
         return file_img
 
     def api_test(self):
@@ -417,6 +416,12 @@ def file_write(filename, text):
     return True
 
 
+def file_bwrite(filename, data):
+    with open(filename, "wb") as fd:
+        fd.write(data)
+    return True
+
+
 def file_read(filename):
     with open(filename, "r") as fd:
         text = fd.readlines()
@@ -431,10 +436,10 @@ def file_append(filename, text):
 
 def external_image_get(url, tmp_dir, timeout=6):
     image_hash = hashlib.md5()
-    image_hash.update(url)
+    image_hash.update(url.encode())
     file_img = tmp_dir + "/external_{0}.png".format(image_hash.hexdigest())
     try:
-        answer = requests.get(url, timeout=timeout)
+        answer = requests.get(url, timeout=timeout, allow_redirects=True)
     except requests.exceptions.ReadTimeout as ex:
         print_message("Can't get external image from '{0}': timeout".format(url))
         return False
@@ -443,7 +448,7 @@ def external_image_get(url, tmp_dir, timeout=6):
         print_message("Can't get external image from '{0}': HTTP 404 error".format(url))
         return False
     answer_image = answer.content
-    file_write(file_img, answer_image)
+    file_bwrite(file_img, answer_image)
     return file_img
 
 
