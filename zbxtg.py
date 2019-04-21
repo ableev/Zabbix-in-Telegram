@@ -601,7 +601,7 @@ def main():
         if not proxy_to_tg.find("http") and not proxy_to_tg.find("socks"):
             proxy_to_tg = "https://" + proxy_to_tg
         tg.proxies = {
-            "https": "{0}".format(zbxtg_settings.proxy_to_tg),
+            "https": "{0}".format(proxy_to_tg),
         }
 
     zbx = ZabbixWeb(server=zbxtg_settings.zbx_server, username=zbxtg_settings.zbx_api_user,
