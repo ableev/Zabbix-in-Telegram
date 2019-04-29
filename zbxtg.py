@@ -897,7 +897,8 @@ def main():
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             if tg.ok:
                 message_id = tg.result["result"]["message_id"]
-            tg.reply_to_message_id = message_id
+            # FIX: message_id must be integer, not string (WTF?!)
+            tg.reply_to_message_id = int(message_id)
             if not zbxtg_file_img:
                 text_warn = "Can't get graph image, check script manually, see logs, or disable graphs"
                 tg.send_message(uid, [text_warn])
