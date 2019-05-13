@@ -847,10 +847,10 @@ def main():
     if not is_single_message:
         tg.send_message(uid, zbxtg_body_text)
         if not tg.ok:
-            # first case – if group has been migrated to a supergroup, we need to update chat_id of that group
-            if tg.error.find("migrated") > -1 and tg.error.find("supergroup") > -1:
+            # first case – if group has been upgraded to a supergroup, we need to update chat_id of that group
+            if tg.error.find("upgraded") > -1 and tg.error.find("supergroup") > -1:
                 migrate_to_chat_id = tg.result["parameters"]["migrate_to_chat_id"]
-                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is migrated to supergroup, "
+                tg.update_cache_uid(zbx_to, migrate_to_chat_id, message="Group chat is upgraded to supergroup, "
                                                                         "updating cache file")
                 uid = migrate_to_chat_id
                 tg.send_message(uid, zbxtg_body_text)
