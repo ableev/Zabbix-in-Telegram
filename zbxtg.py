@@ -174,6 +174,8 @@ class TelegramAPI:
 
     def get_uid(self, name):
         uid = 0
+        if sys.version_info[0] < 3:
+            name = name.decode("utf-8")
         if self.debug:
             print_message("Getting uid from /getUpdates...")
         updates = self.get_updates()
@@ -190,12 +192,9 @@ class TelegramAPI:
                         uid = chat["id"]
             if (chat["type"] == "group" or chat["type"] == "supergroup") and self.type == "group":
                 if "title" in chat:
-                    if sys.version_info[0] < 3:
-                        if chat["title"] == name.decode("utf-8"):
-                            uid = chat["id"]
-                    else:
-                        if chat["title"] == name:
-                            uid = chat["id"]
+                    if chat["title"] == name:
+                        uid = chat["id"]
+                        break
         if self.debug:
             print_message("Use uid = {0}".format(uid))
         return uid
