@@ -190,9 +190,11 @@ class TelegramAPI:
                 if "username" in chat:
                     if chat["username"] == name:
                         uid = chat["id"]
+                        break
             if (chat["type"] == "group" or chat["type"] == "supergroup") and self.type == "group":
                 if name == str(chat["id"]).encode("utf-8").decode("utf-8"):
                     uid = name
+                    break
                 if "title" in chat:
                     if chat["title"] == name:
                         uid = chat["id"]
