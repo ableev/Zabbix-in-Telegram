@@ -196,6 +196,8 @@ class TelegramAPI:
                     else:
                         if chat["title"] == name:
                             uid = chat["id"]
+        if self.debug:
+            print_message("Use uid = {0}".format(uid))
         return uid
 
     def error_need_to_contact(self, to):
