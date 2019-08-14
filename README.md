@@ -28,6 +28,12 @@ Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/c
 **First of all**: You need to install the appropriate modules for python, this is required for operation! </br>
                   To do so, enter `pip install -r requirements.txt` in your commandline!
 
+**How to install pip**: https://pip.pypa.io/en/stable/installing/
+
+**Or by your system package manager**: 
+* *Ubuntu/Debian* - `sudo apt-get install python-pip`(python3-pip for Python3)
+* *Centos* - `sudo yum install python-pip` (python3-pip for Python3)
+
  * Put `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your `zabbix_server.conf`
  * Put `zbxtg_group.py` in the same location if you want to send messages to the group chat (if you are using Zabbix 2.x version)
  * Create `zbxtg_settings.py` (copy it from `zbxtg_settings.example.py`) with your settings and save them in the same directory as the script, see example for layout
