@@ -896,6 +896,8 @@ def main():
                 zbxtg_file_img = external_image_get(settings["extimg"], tmp_dir=zbx.tmp_dir)
             zbxtg_body_text, is_modified = list_cut(zbxtg_body_text, 200)
             if tg.ok:
+                if is_debug:
+                    print(tg.result)
                 message_id = tg.result["result"]["message_id"]
             tg.reply_to_message_id = message_id
             if not zbxtg_file_img:
