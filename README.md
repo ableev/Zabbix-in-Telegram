@@ -106,5 +106,5 @@ You can use markdown or html formatting in your action: https://core.telegram.or
 If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
 Such captions will be automatically cut to 200 symbols.
 
-#### Zabbix 3.0 
+#### Zabbix 3.0 and higher (3.2, 3.4, 4.0, 4.2, 4.4)
 https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
