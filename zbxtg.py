@@ -304,7 +304,8 @@ class ZabbixWeb:
         self.cookie = cookie
 
     def graph_get(self, itemid, period, title, width, height, version=3):
-        file_img = self.tmp_dir + "/{0}.png".format("".join(itemid))
+        file_img = "{0}/{1}.png".format(self.tmp_dir,                                                   
+                                        "".join(random.choice(string.ascii_letters) for e in range(10)))
 
         title = requests.utils.quote(title)
 
