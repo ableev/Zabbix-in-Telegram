@@ -6,13 +6,13 @@ import os
 import time
 import random
 import string
+import warnings
 import requests
 import json
 import re
 import stat
 import hashlib
 import subprocess
-#import sqlite3
 from os.path import dirname
 import zbxtg_settings
 
@@ -288,7 +288,8 @@ class ZabbixWeb:
 
     def login(self):
         if not self.verify:
-            requests.packages.urllib3.disable_warnings()
+            # Filter self-signed/expired certificate warnings.
+            warnings.filterwarnings('ignore', message='Unverified HTTPS request')
 
         data_api = {"name": self.username, "password": self.password, "enter": "Sign in"}
         answer = requests.post(self.server + "/", data=data_api, proxies=self.proxies, verify=self.verify,
