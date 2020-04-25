@@ -51,6 +51,12 @@ zbx_db_password = "zbxtg"
 
 
 emoji_map = {
+    "Disaster": "🔥",
+    "High": "🛑",
+    "Average": "❗",
+    "Warning": "⚠️",
+    "Information": "ℹ️",
+    "Not classified": "🔘",
     "OK": "✅",
     "PROBLEM": "❗",
     "info": "ℹ️",
