@@ -174,6 +174,13 @@ class TelegramAPI:
 
     def get_uid(self, name):
         uid = 0
+        try:
+            uid = int(name)
+            return uid
+        except ValueError:
+            pass
+        if sys.version_info[0] < 3:
+            name = name.decode("utf-8")
         if self.debug:
             print_message("Getting uid from /getUpdates...")
         updates = self.get_updates()
@@ -188,14 +195,12 @@ class TelegramAPI:
                 if "username" in chat:
                     if chat["username"] == name:
                         uid = chat["id"]
+                        break
             if (chat["type"] == "group" or chat["type"] == "supergroup") and self.type == "group":
                 if "title" in chat:
-                    if sys.version_info[0] < 3:
-                        if chat["title"] == name.decode("utf-8"):
-                            uid = chat["id"]
-                    else:
-                        if chat["title"] == name:
-                            uid = chat["id"]
+                    if chat["title"] == name:
+                        uid = chat["id"]
+                        break
         return uid
 
     def error_need_to_contact(self, to):
@@ -807,6 +812,8 @@ def main():
 
     if not uid:
         uid = tg.get_uid(zbx_to)
+        if self.debug:
+            print_message("get_uid result = {0}".format(uid))
         if uid:
             tmp_need_update = True
     if not uid:
