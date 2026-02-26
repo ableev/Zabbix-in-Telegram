@@ -16,6 +16,12 @@ import subprocess
 from os.path import dirname
 import zbxtg_settings
 
+try:
+    from PIL import Image, ImageDraw, ImageFont
+    pil_imported = True
+except ImportError:
+    pil_imported = False
+
 
 class Cache:
     def __init__(self, database):
@@ -49,6 +55,8 @@ class TelegramAPI:
         self.location = {"latitude": None, "longitude": None}
         self.update_offset = 0
         self.image_buttons = False
+        self.message_thread_id = None
+        self.reply_markup = None
         self.result = None
         self.ok = None
         self.error = None
@@ -87,6 +95,10 @@ class TelegramAPI:
             if self.markdown:
                 parse_mode = "Markdown"
             params["parse_mode"] = parse_mode
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
+        if self.reply_markup:
+            params["reply_markup"] = self.reply_markup
         if self.debug:
             print_message("Trying to /sendMessage:")
             print_message(url)
@@ -110,6 +122,8 @@ class TelegramAPI:
             if self.markdown:
                 parse_mode = "Markdown"
             params["parse_mode"] = parse_mode
+        if self.reply_markup:
+            params["reply_markup"] = self.reply_markup
         if self.debug:
             print_message("Trying to /editMessageText:")
             print_message(url)
@@ -132,9 +146,11 @@ class TelegramAPI:
                 {"text": "24h", "callback_data": "graph_period_86400"},
             ], ]})
         else:
-            reply_markup = json.dumps({})
+            reply_markup = self.reply_markup or json.dumps({})
         params = {"chat_id": to, "caption": message, "disable_notification": self.disable_notification,
                   "reply_markup": reply_markup}
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
         files = {"photo": open(path, 'rb')}
@@ -159,6 +175,10 @@ class TelegramAPI:
         path += ".txt"
         file_write(path, text)
         params = {"chat_id": to, "caption": path.split("/")[-1], "disable_notification": self.disable_notification}
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
+        if self.reply_markup:
+            params["reply_markup"] = self.reply_markup
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
         files = {"document": open(path, 'rb')}
@@ -206,12 +226,24 @@ class TelegramAPI:
                           .format(to, self.get_me()["result"]["username"]))
 
     def update_cache_uid(self, name, uid, message="Add new string to cache file"):
-        cache_string = "{0};{1};{2}\n".format(name, self.type, str(uid).rstrip())
-        # FIXME
+        # Fix for duplicated uids
+        uids_dict = {}
+        if os.path.isfile(self.tmp_uids):
+            with open(self.tmp_uids, 'r') as cache_file_uids:
+                lines = cache_file_uids.readlines()
+                for u in lines:
+                    parts = u.strip().split(";")
+                    if len(parts) == 3:
+                        uids_dict[(parts[0], parts[1])] = parts[2]
+                        
+        uids_dict[(name, self.type)] = str(uid).rstrip()
+        
+        with open(self.tmp_uids, "w") as cache_file_uids:
+            for (k_name, k_type), v_uid in uids_dict.items():
+                cache_file_uids.write("{0};{1};{2}\n".format(k_name, k_type, v_uid))
+                
         if self.debug:
-            print_message("{0}: {1}".format(message, cache_string))
-        with open(self.tmp_uids, "a") as cache_file_uids:
-            cache_file_uids.write(cache_string)
+            print_message("Updated cache string for {0} (type: {1}) with uid {2}".format(name, self.type, uid))
         return True
 
     def get_uid_from_cache(self, name):
@@ -231,6 +263,10 @@ class TelegramAPI:
         url = self.tg_url_bot_general + self.key + "/sendLocation"
         params = {"chat_id": to, "disable_notification": self.disable_notification,
                   "latitude": coordinates["latitude"], "longitude": coordinates["longitude"]}
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
+        if self.reply_markup:
+            params["reply_markup"] = self.reply_markup
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
         if self.debug:
@@ -467,7 +503,95 @@ def age2sec(age_str):
                 age_sec += int(i[0:-1])*3600
             if metric == "m":
                 age_sec += int(i[0:-1])*60
-    return age_sec
+
+# Multi-language dictionary
+I18N = {
+    "ru": {
+        "login_failed": "Ошибка авторизации в Zabbix Web UI (неверный url, логин или пароль). Проверьте настройки. Графики отправлены не будут.",
+        "img_failed": "Не удалось получить график, проверьте скрипт, логи или временно отключите отправку графиков.",
+        "caption_cut": "Вероятно вы получите ошибку MEDIA_CAPTION_TOO_LONG. Сообщение обрезано до 200 символов.",
+        "user_rights": "Пользователь Zabbix не смог получить график (вероятно нет прав на чтение данных хоста). Проверьте настройки.",
+        "t2i_fallback": "Не удалось отправить сгенерированное изображение, отправлен резервный текст.",
+        "t2i_no_pillow": "Pillow не установлен, но text2image включён. Отправлен текст."
+    },
+    "en": {
+        "login_failed": "Login to Zabbix web UI has failed (web url, user or password are incorrect), unable to send graphs check manually",
+        "img_failed": "Can't get graph image, check script manually, see logs, or disable graphs",
+        "caption_cut": "probably you will see MEDIA_CAPTION_TOO_LONG error, the message has been cut to 200 symbols",
+        "user_rights": "Zabbix user couldn't get graph (probably has no rights to get data from host), check script manually",
+        "t2i_fallback": "Failed to send generated image, falling back to text",
+        "t2i_no_pillow": "Error: Pillow is not installed but text2image is enabled"
+    },
+    "uz": {
+        "login_failed": "Zabbix Web UI tizimiga kirish amalga oshmadi (url, foydalanuvchi yoki parol noto'g'ri), grafiklar yuborilmaydi.",
+        "img_failed": "Grafik rasmini olib bo'lmadi, skriptni qo'lda tekshiring, jurnallarni ko'ring yoki grafiklarni o'chiring.",
+        "caption_cut": "Sizda MEDIA_CAPTION_TOO_LONG xatosi bo'lishi ehtimoli bor, matn 200 ta belgiga qisqartirildi.",
+        "user_rights": "Zabbix foydalanuvchisi grafikni ololmadi (xost ma'lumotlarini o'qish imkoniyati yoqdir). Sozlamalarni tekshiring.",
+        "t2i_fallback": "Rasmni yuborib bo'lmadi, zaxira matn yuborildi.",
+        "t2i_no_pillow": "Pillow o'rnatilmagan, lekin text2image funksiyasi yoqilgan. Matn yuborilmoqda."
+    }
+}
+
+def get_text(lang, key):
+    return I18N.get(lang, I18N["en"]).get(key, I18N["en"][key])
+
+def create_alert_image(data_dict, output_path, title_text="", alert_type=""):
+    # Main color palettes based on alert severity
+    colors = {
+        "ok": (144, 238, 144),         # Light Green 
+        "resolved": (144, 238, 144),
+        "problem": (255, 102, 102),    # Light Red
+        "disaster": (220, 20, 60),     # Crimson Red
+        "high": (250, 128, 114),       # Salmon
+        "warning": (255, 255, 102),    # Yellow
+        "information": (173, 216, 230) # Light Blue
+    }
+    
+    # Default to white if type unknown
+    header_color = colors.get(alert_type.lower(), (230, 230, 230))
+
+    try:
+        font = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial.ttf", 16)
+        font_bold = ImageFont.truetype("/System/Library/Fonts/Supplemental/Arial Bold.ttf", 16)
+    except IOError:
+        font = ImageFont.load_default()
+        font_bold = font
+
+    col1_width = 300
+    col2_width = 450
+    row_height = 30
+    total_width = col1_width + col2_width
+    num_rows = len(data_dict) + (1 if title_text else 0)
+
+    total_height = num_rows * row_height
+
+    img = Image.new('RGB', (total_width, total_height), color=color_white)
+    draw = ImageDraw.Draw(img)
+
+    y = 0
+    if title_text:
+        draw.rectangle([(0, y), (total_width, y + row_height)], outline=color_black, width=1)
+        try:
+            bbox = draw.textbbox((0, 0), title_text, font=font_bold)
+            tw = bbox[2] - bbox[0]
+            th = bbox[3] - bbox[1]
+        except AttributeError:
+            # Fallback for older PIL
+            tw, th = draw.textsize(title_text, font=font_bold)
+        draw.text(((total_width - tw) / 2, y + (row_height - th) / 2 - 2), title_text, font=font_bold, fill=color_black)
+        y += row_height
+
+    for key, value in data_dict.items():
+        draw.rectangle([(0, y), (col1_width, y + row_height)], fill=header_color, outline=(0, 0, 0), width=1)
+        draw.text((5, y + 5), str(key), font=font, fill=(0, 0, 0))
+
+        draw.rectangle([(col1_width, y), (total_width, y + row_height)], fill=(255, 255, 255), outline=(0, 0, 0), width=1)
+        draw.text((col1_width + 5, y + 5), str(value), font=font, fill=(0, 0, 0))
+
+        y += row_height
+
+    img.save(output_path)
+    return output_path
 
 
 def main():
@@ -488,6 +612,11 @@ def main():
     log_file = "/dev/null"
 
     args = sys.argv
+
+    try:
+        lang = zbxtg_settings.tg_lang
+    except AttributeError:
+        lang = "en"
 
     settings = {
         "zbxtg_itemid": "0",  # itemid for graph
@@ -511,10 +640,17 @@ def main():
         "signature": None,
         "signature_disable": False,
         "graph_buttons": False,
+        "tg_topic": None,
+        "tg_silent": False,
+        "tg_button_text": None,
+        "tg_button_url": None,
         "extimg": None,
         "to": None,
         "to_group": None,
         "forked": False,
+        "text2image": False,
+        "text2image_title": "",
+        "alert_type": "",
     }
 
     url_github = "https://github.com/ableev/Zabbix-in-Telegram"
@@ -555,9 +691,16 @@ def main():
         "graph_buttons": {"name": "graph_buttons", "type": "bool",
                           "help": "activates buttons under graph, could be using in ZbxTgDaemon",
                           "url": "Interactive-bot"},
+        "topic": {"name": "tg_topic", "type": "str", "help": "message thread id for forums", "url": "Topics"},
+        "silent": {"name": "tg_silent", "type": "bool", "help": "send message silently", "url": "Silent-notifications"},
+        "button_text": {"name": "tg_button_text", "type": "str", "help": "inline button text", "url": "Interactive-bot"},
+        "button_url": {"name": "tg_button_url", "type": "str", "help": "inline button url", "url": "Interactive-bot"},
         "external_image": {"name": "extimg", "type": "str",
                            "help": "should be url; attaches external image from different source",
                            "url": "External-image-as-graph"},
+        "text2image": {"name": "text2image", "type": "bool", "help": "converts text table into image", "url": ""},
+        "text2image_title": {"name": "text2image_title", "type": "str", "help": "title for text2image", "url": ""},
+        "alert_type": {"name": "alert_type", "type": "str", "help": "defines the color of the text-to-image table header (Problem/Ok/Warning/etc)", "url": ""},
         "to": {"name": "to", "type": "str", "help": "rewrite zabbix username, use that instead of arguments",
                "url": "Custom-to-and-to_group"},
         "to_group": {"name": "to_group", "type": "str",
@@ -715,6 +858,15 @@ def main():
     if "--graph_buttons" in args or settings["graph_buttons"]:
         tg.image_buttons = True
 
+    if settings["tg_topic"]:
+        tg.message_thread_id = settings["tg_topic"]
+
+    if settings["tg_silent"] or "--silent" in args:
+        tg.disable_notification = True
+
+    if settings["tg_button_text"] and settings["tg_button_url"]:
+        tg.reply_markup = json.dumps({"inline_keyboard": [[{"text": settings["tg_button_text"], "url": settings["tg_button_url"]}]]})
+
     if "--forked" in args:
         settings["forked"] = True
 
@@ -845,7 +997,35 @@ def main():
             internal_using_emoji = True
         zbxtg_body_text = zbxtg_body_text_emoji_support
 
-    if not is_single_message:
+    if settings["text2image"]:
+        if not pil_imported:
+            print_message(get_text(lang, "t2i_no_pillow"))
+            tg.send_message(uid, zbxtg_body_text)
+        else:
+            # Parse text into dictionary
+            data_dict = {}
+            for line in zbxtg_body_text:
+                if ":" in line:
+                    k, v = line.split(":", 1)
+                    data_dict[k.strip()] = v.strip()
+            
+            if data_dict:
+                gen_img_path = tmp_dir + "/zbxtg_t2i_" + hash_ts + ".png"
+                create_alert_image(data_dict, gen_img_path, title_text=settings["text2image_title"], alert_type=settings["alert_type"])
+                tg.send_photo(uid, "", gen_img_path)
+                
+                # Check if it was ok or send text fallback
+                if not tg.ok:
+                    print_message(get_text(lang, "t2i_fallback"))
+                    tg.send_message(uid, zbxtg_body_text)
+                
+                try:
+                    os.remove(gen_img_path)
+                except:
+                    pass
+            else:
+                tg.send_message(uid, zbxtg_body_text)
+    elif not is_single_message:
         tg.send_message(uid, zbxtg_body_text)
         if not tg.ok:
             # first case – if group has been migrated to a supergroup, we need to update chat_id of that group
@@ -884,8 +1064,7 @@ def main():
     if tg_method_image:
         zbx.login()
         if not zbx.cookie:
-            text_warn = "Login to Zabbix web UI has failed (web url, user or password are incorrect), "\
-                        "unable to send graphs check manually"
+            text_warn = get_text(lang, "login_failed")
             tg.send_message(uid, [text_warn])
             print_message(text_warn)
         else:
@@ -900,7 +1079,7 @@ def main():
                 message_id = tg.result["result"]["message_id"]
             tg.reply_to_message_id = message_id
             if not zbxtg_file_img:
-                text_warn = "Can't get graph image, check script manually, see logs, or disable graphs"
+                text_warn = get_text(lang, "img_failed")
                 tg.send_message(uid, [text_warn])
                 print_message(text_warn)
             else:
@@ -908,10 +1087,7 @@ def main():
                     zbxtg_body_text = ""
                 else:
                     if is_modified:
-                        text_warn = "probably you will see MEDIA_CAPTION_TOO_LONG error, "\
-                                    "the message has been cut to 200 symbols, "\
-                                    "https://github.com/ableev/Zabbix-in-Telegram/issues/9"\
-                                    "#issuecomment-166895044"
+                        text_warn = get_text(lang, "caption_cut")
                         print_message(text_warn)
                 if not is_single_message:
                     tg.disable_notification = True
@@ -923,9 +1099,7 @@ def main():
                     if tg.error.find("PHOTO_INVALID_DIMENSIONS") > -1:
                         if not tg.disable_web_page_preview:
                             tg.disable_web_page_preview = True
-                        text_warn = "Zabbix user couldn't get graph (probably has no rights to get data from host), " \
-                                    "check script manually, see {0}".format(url_wiki_base + "/" +
-                                                                            settings_description["graphs"]["url"])
+                        text_warn = get_text(lang, "user_rights")
                         tg.send_message(uid, [text_warn])
                         print_message(text_warn)
     if tg.location and location_coordinates["latitude"] and location_coordinates["longitude"]:
