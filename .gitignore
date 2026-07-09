@@ -1,0 +1,7 @@
+zbxtg_settings.py
+zbxtg_settings.yaml
+zbxtg_settings.yml
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/

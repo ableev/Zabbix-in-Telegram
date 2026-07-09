@@ -1,0 +1,102 @@
+# zbxtg configuration.
+#
+# Copy this file to zbxtg_settings.yaml (same directory as zbxtg.py) and fill
+# in your own values. zbxtg_settings.yaml is gitignored on purpose -- it will
+# contain your bot token and Zabbix credentials.
+#
+# Legacy zbxtg_settings.py files are still auto-detected as a fallback, but
+# support for that format will be removed in a future release -- please
+# migrate.
+
+telegram:
+  # Get this from @BotFather: https://core.telegram.org/bots#creating-a-new-bot
+  bot_token: "XYZ"
+
+  # Optional outbound proxy for Telegram API calls only.
+  # Examples:
+  #   proxy: "https://proxy.local:3128"
+  #   proxy: "socks5://user:password@hostname:port"
+  #   proxy: "socks5h://hostname:port"   # resolve DNS via the proxy
+  proxy: null
+
+  signature:
+    enabled: false
+    # Defaults to zabbix.server below when enabled and left blank here.
+    text: null
+
+# How `zbxtg;key:value` directives are parsed out of the Zabbix message body.
+# See README.md#annotations for the full list of directives.
+directives:
+  prefix: "zbxtg"
+  update_existing_messages: true
+  status_labels:
+    problem: "PROBLEM: "
+    ok: "OK: "
+
+zabbix:
+  # Full URL to your Zabbix frontend, e.g. "http://example.com/zabbix"
+  server: "http://127.0.0.1/zabbix/"
+
+  # Informational only (graphs always use a from/to time range regardless of
+  # this value). Kept for documentation purposes; 7 is the primary target.
+  version: 7
+
+  api:
+    # A dedicated, read-only Zabbix frontend user -- only used to log in and
+    # fetch graph images, see README.md for why the API alone can't do this.
+    username: "api"
+    password: "api"
+    verify_tls: true   # set to false to skip TLS verification (self-signed certs)
+    # Optional Zabbix 6.4+ API token, for the (currently optional) JSON-RPC
+    # helper in zbxtg_lib/zabbix_api.py. Not required for sending graphs.
+    token: null
+
+  basic_auth:
+    enabled: false
+    username: "zabbix"
+    password: "zabbix"
+
+  # Outbound proxy for talking to the Zabbix frontend (host:port, no scheme).
+  proxy: null
+
+  database:
+    # Reserved for a future direct-DB integration; unused today.
+    host: "localhost"
+    name: "zabbix"
+    user: "zbxtg"
+    password: "zbxtg"
+
+# Settings for the experimental ZbxTgDaemon.py (out of scope for this
+# rewrite, kept here for backward compatibility).
+daemon:
+  enabled: false
+  allowed_chat_ids: [6931850]
+  allowed_usernames: ["ableev"]
+  allowed_chat_titles: ["Zabbix in Telegram Script"]
+
+google_maps:
+  # https://developers.google.com/maps/documentation/geocoding/intro
+  api_key: null
+
+runtime:
+  # Where uid cache / temporary graph images / cookies are stored.
+  # Change this away from the default -- see the wiki for why.
+  tmp_dir: "/var/tmp/zbxtg"
+
+# Replace {{key}} placeholders in message text with an emoji.
+# https://github.com/ableev/Zabbix-in-Telegram/wiki/Trigger-severity-as-Emoji
+emoji_map:
+  Disaster: "🔥"
+  High: "🛑"
+  Average: "❗"
+  Warning: "⚠️"
+  Information: "ℹ️"
+  Not classified: "🔘"
+  OK: "✅"
+  PROBLEM: "❗"
+  info: "ℹ️"
+  WARNING: "⚠️"
+  DISASTER: "❌"
+  bomb: "💣"
+  fire: "🔥"
+  hankey: "💩"

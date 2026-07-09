@@ -1,4 +1,8 @@
 # -*- coding: utf-8 -*-
+# DEPRECATED: new installations should copy zbxtg_settings.example.yaml to
+# zbxtg_settings.yaml instead. This legacy .py format is still auto-detected
+# as a fallback (see zbxtg_lib/config.py) but will be removed in a future
+# release.
 
 tg_key = "XYZ"  # telegram bot api key
 

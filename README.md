@@ -1,51 +1,61 @@
 # Zabbix-in-Telegram
-Zabbix Notifications with graphs in Telegram
 
-Join us in our **Telegram group** via this link: https://t.me/ZbxTg
+Zabbix notifications with graphs, delivered to Telegram.
+
+Join our **Telegram group**: https://t.me/ZbxTg
 
 Subscribe to our channel: https://t.me/Zabbix_in_Telegram
 
-Rate on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
+Rate us on [share.zabbix.com](https://share.zabbix.com): https://share.zabbix.com/cat-notifications/zabbix-in-telegram
 
 ### Features
-- [x] Graphs based on latest data are sent directly to your messenger
-- [x] You can send messages both in private and group/supergroup chats
-- [x] Channels support (only public, but you can do it for private as well with dirty hack)
-- [x] Saves chatid as a temporary file
-- [x] Simple markdown and HTML are supported
-- [x] Emoji (you can use emoji instead of severity, see [the wiki article](https://github.com/ableev/Zabbix-in-Telegram/wiki/Trigger-severity-as-Emoji)) (zabbix doesn't support utf8mb4 encoding yet)
-- [x] Location map
+- [x] Graphs based on the latest data are sent directly to your messenger
+- [x] Send messages to private chats as well as group/supergroup chats
+- [x] Channel support (public channels only; private channels are possible with a workaround)
+- [x] Chat IDs are cached in a local file
+- [x] Basic Markdown and HTML formatting
+- [x] Emoji instead of severity text (see [the wiki article](https://github.com/ableev/Zabbix-in-Telegram/wiki/Trigger-severity-as-Emoji); Zabbix doesn't support utf8mb4 encoding yet)
+- [x] Location map support
 
 ### TODOs
-- Simple zabbix's management via bot's commands – in dev state
-- Ability to send complex graph or part of screen
+- Simple Zabbix management via bot commands -- in development (see `ZbxTgDaemon.py`, experimental)
+- Ability to send a complex graph or part of a screen
 
+### Requirements
+
+- Python 3.9+
+- Zabbix 4.0+ (this version targets Zabbix 7.0 as the primary release; see [Known issues](#known-issues) for older versions)
 
 ### Configuration / Installation
 
-**READ WIKI IF YOU HAVE PROBLEM WITH SOMETHING**: https://github.com/ableev/Zabbix-in-Telegram/wiki
+**See the wiki if you run into trouble**: https://github.com/ableev/Zabbix-in-Telegram/wiki
 
-**First of all**: You need to install the appropriate modules for python, this is required for operation! </br>
-                  To do so, enter `pip install -r requirements.txt` in your commandline!
+**First**, install the required Python packages:
+```
+pip install -r requirements.txt
+```
 
- * Put `zbxtg.py` in your `AlertScriptsPath` directory, the path is set inside your `zabbix_server.conf`
- * Put `zbxtg_group.py` in the same location if you want to send messages to the group chat (if you are using Zabbix 2.x version)
- * Create `zbxtg_settings.py` (copy it from `zbxtg_settings.example.py`) with your settings and save them in the same directory as the script, see example for layout
-  * Create a bot in Telegram and get API key: https://core.telegram.org/bots#creating-a-new-bot
-  * Create readonly user in Zabbix web interface (for getting graphs from zabbix)
-  * Set proxy host:port in `zbxtg_settings.py` if you need an internet proxy (socks5 supported as well, the wiki will help you)
- * Add new media for Telegram in Zabbix web interface with these settings:
- 
+* Copy `zbxtg.py` and the `zbxtg_lib/` directory into your `AlertScriptsPath` directory (the path is set in `zabbix_server.conf`). They must stay together -- `zbxtg.py` is a thin entry point that imports the rest of the code from `zbxtg_lib/`.
+* Also copy `zbxtg_group.py` into the same location if you want to send messages to group chats (it's a symlink to `zbxtg.py`; Zabbix 2.x only -- on modern Zabbix just use the `group` directive/media setting instead).
+* Create `zbxtg_settings.yaml` (copy it from `zbxtg_settings.example.yaml`) in the same directory as the script, and fill in your settings -- see the example file for the full, documented layout.
+  * Create a bot in Telegram and get its API token: https://core.telegram.org/bots#creating-a-new-bot
+  * Create a read-only user in the Zabbix web interface (used to fetch graph images -- see [Known issues](#known-issues) for why this needs a web login rather than just the API)
+  * Set `zabbix.proxy` / `telegram.proxy` in `zbxtg_settings.yaml` if you're behind an internet proxy (SOCKS5 is supported too; see the comments in the example file)
+
+  > Upgrading from an older release? A legacy `zbxtg_settings.py` next to the script is still auto-detected as a fallback, but support for it will be removed in a future release -- please migrate to the YAML format.
+
+* Add a new Media type for Telegram in the Zabbix web interface with these settings:
+
 <img src="https://i.imgur.com/Ytrbe4S.png" width="400px">
 
- * Add another one if you want to send messages to the group
- 
+* Add another Media type if you also want to send messages to a group:
+
 <img src="http://i.imgur.com/OTq4aQd.png" width="400px">
 
- * **Note that Zabbix 3.0 has different settings for that step, see it there**: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
- * Send a message to your bot via Telegram, e.g. "/start"
-  * If you are in a group chat, start a conversation with your bot: `/start@ZbxTgDevBot`
- * Create a new action like this:
+* **Zabbix 3.0 and later use different Media type settings** -- see: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
+* Send a message to your bot in Telegram, e.g. `/start`
+  * In a group chat, start the conversation with your bot instead: `/start@ZbxTgDevBot`
+* Create a new action like this:
 ```
 Last value: {ITEM.LASTVALUE1} ({TIME})
 zbxtg;graphs
@@ -56,11 +66,11 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
 
 <img src="https://i.imgur.com/ZNKtBUX.png" width="400px">
 
- * Add the appropriate Media Type to your user
-  * The username is **CASE-SENSITIVE**
-  * If you don't have a username, you can use your chatid directly (and you need to google how to get it)
-  * Group chats don't have URLs, so you need to put group's name in media type
-  * Messages for channels should be sent as for private chats (simply add bot to your channel first and use channel's username as if it was a real user)
+* Add the appropriate Media type to your user
+  * The username is **case-sensitive**
+  * If you don't have a username, you can use your chat ID directly (search online for how to find it)
+  * Group chats don't have URLs, so put the group's name in the Media type instead
+  * Messages to channels are configured the same way as private chats -- add the bot to your channel first, then use the channel's username as if it were a regular user
 
   * Private:
 
@@ -73,27 +83,50 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
-zbxtg;graphs_period=10800 -- set graphs period (default - 3600 seconds)
-zbxtg;graphs_width=700 -- set graphs width (default - 900px)
-zbxtg;graphs_height=300 -- set graphs height (default - 300px)
-zbxtg;itemid:{ITEM.ID1} -- define itemid (from trigger) for attach
-zbxtg;itemid:{ITEM.ID1},{ITEM.ID2},{ITEM.ID3} -- same, but if you want to send two or more graphs, use complex trigger
-zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- graph's title
-zbxtg;debug -- enables debug mode, some logs and images will be saved in the tmp dir (temporary doesn't affect python version)
-zbxtg;channel -- enables sending to channels
-zbxtg;to:username1,username2,username3 -- now you don't need to create dedicated profiles and add media for them, use this option in action to send messages to those user(s)
-zbxtg;to_group:Group Name One,Group Name Two -- the same but for groups
+zbxtg;graphs_period=10800 -- sets the graph period (default: 3600 seconds)
+zbxtg;graphs_width=700 -- sets the graph width (default: 900px)
+zbxtg;graphs_height=300 -- sets the graph height (default: 300px)
+zbxtg;itemid:{ITEM.ID1} -- attaches a graph for this itemid (from the trigger)
+zbxtg;itemid:{ITEM.ID1},{ITEM.ID2},{ITEM.ID3} -- same, but for two or more graphs, use a complex trigger
+zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- sets the graph's title
+zbxtg;debug -- enables debug mode; some logs and images are saved to the tmp dir
+zbxtg;channel -- sends the message to a channel
+zbxtg;to:username1,username2,username3 -- send to these user(s) directly, without creating dedicated Media types for them
+zbxtg;to_group:Group Name One,Group Name Two -- same, but for groups
 ```
 
-You can use markdown or html formatting in your action: https://core.telegram.org/bots/api#markdown-style + https://core.telegram.org/bots/api#html-style. 
+You can use Markdown or HTML formatting in your action: https://core.telegram.org/bots/api#markdown-style + https://core.telegram.org/bots/api#html-style.
 
 #### Debug
 
-* You can use the following command to send a message from your command line: </br>
-`./zbxtg.py "@username" "first part of a message" "second part of a message" --debug`
- * For `@username` substitute your Telegram username, **NOT that of your bot** (case-sensitive) OR chatid
- * For `first part of a message` and `second part of a message` just substitute something like "test" "test" (for Telegram it's doesn't matter between subject and body)
- * You can skip the `"` if it's one word for every parameter, these are optional
+* Send a message from the command line to test your setup:
+```
+./zbxtg.py "@username" "first part of a message" "second part of a message" --debug
+```
+  * For `@username`, substitute your own Telegram username (**not the bot's**, case-sensitive) or your chat ID
+  * For the message parts, substitute something like `test` `test` (Telegram doesn't distinguish between subject and body)
+  * You can omit the quotes if a parameter is a single word
+
+### Development
+
+The code is split across a few modules under `zbxtg_lib/`:
+
+- `cli.py` -- argument parsing and orchestration (what used to be `zbxtg.py`'s `main()`)
+- `directives.py` -- parsing of `zbxtg;key:value` directives from the message body
+- `config.py` -- loads `zbxtg_settings.yaml` (or the legacy `.py` format) into typed config objects
+- `telegram_api.py` -- Telegram Bot API client
+- `zabbix_web.py` -- fetches rendered graph images from the Zabbix web frontend
+- `zabbix_api.py` -- optional Zabbix JSON-RPC client (not required for the core flow, see [Known issues](#known-issues))
+- `maps.py` -- Google Geocoding lookup for the `location` directive
+- `utils.py` -- small shared helpers, including the flat-file chat ID cache
+
+`zbxtg.py` and `zbxtg_group.py` are thin entry points that Zabbix calls directly by path -- their names and locations are part of the public interface and won't change.
+
+Run the test suite with:
+```
+pip install -r requirements-dev.txt
+pytest
+```
 
 ---
 
@@ -103,8 +136,12 @@ You can use markdown or html formatting in your action: https://core.telegram.or
 ### Known issues
 
 #### MEDIA_CAPTION_TOO_LONG
-If you see this error, it means that you rich the limit of caption with 200 symbols in it (Telegram API's limitaion).
-Such captions will be automatically cut to 200 symbols.
+This means you've hit Telegram's 200-character limit for photo captions. Captions longer than that are automatically cut to 200 symbols.
 
-#### Zabbix 3.0 and higher (3.2, 3.4, 4.0, 4.2, 4.4)
-https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
+#### Why graphs are fetched from the web UI instead of the API
+The Zabbix JSON-RPC API (`graph.get`, `item.get`, etc.) only returns graph *configuration* -- it does not render images. Rendering is done exclusively by frontend endpoints such as `chart3.php`, which is why this script logs into the Zabbix web UI with its own read-only user to fetch graph images. This is still the case as of Zabbix 7.0.
+
+#### Zabbix version support
+Zabbix 4.0 and later are supported, with 7.0 as the primary target. If you're still on Zabbix 2.x/3.x, the classic `period=` graph URL parameter used on those versions was removed from this rewrite (current Zabbix frontends only accept a `from`/`to` time range) -- pin to a pre-3.0 release of this project if you can't upgrade Zabbix yet.
+
+See also: https://github.com/ableev/Zabbix-in-Telegram/wiki/Working-with-Zabbix-3.0
