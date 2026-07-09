@@ -5,3 +5,5 @@ zbxtg_settings.yml
 __pycache__/
 .pytest_cache/
 *.egg-info/
+.venv/
+cli-test.sh

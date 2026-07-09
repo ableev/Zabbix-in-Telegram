@@ -277,15 +277,17 @@ def _retry_after_markdown_error(tg: TelegramAPI, text_lines: List[str], used_emo
 
 def _send_graph(zbx: ZabbixWeb, tg: TelegramAPI, uid: str, settings: directives.RunSettings,
                  text_lines: List[str], message_id: int, logger) -> int:
-    if not zbx.login():
-        warning = "Login to the Zabbix web UI failed (check server URL, user or password); sending graphs manually is required."
-        tg.send_message(uid, [warning])
-        logger.error(warning)
-        return message_id
-
     if settings.external_image:
+        # An external image doesn't need a Zabbix session at all -- skip the
+        # frontend login entirely so this path works even without valid
+        # Zabbix credentials configured.
         file_img = external_image_get(settings.external_image, zbx.tmp_dir, logger=logger)
     else:
+        if not zbx.login():
+            warning = "Login to the Zabbix web UI failed (check server URL, user or password); sending graphs manually is required."
+            tg.send_message(uid, [warning])
+            logger.error(warning)
+            return message_id
         file_img = zbx.graph_get(settings.itemid, settings.graphs_period, settings.title,
                                   settings.graphs_width, settings.graphs_height)
 

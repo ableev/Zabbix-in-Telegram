@@ -123,6 +123,30 @@ def test_main_with_graphs_directive_fetches_and_sends_photo(tmp_path, monkeypatc
     assert tg.sent_photos
 
 
+def test_main_external_image_skips_zabbix_login(tmp_path, monkeypatch):
+    """Regression test: sending an external_image must not require a working
+    Zabbix login -- found while manually testing the picture-sending flow."""
+    fake_image_path = str(tmp_path / "fake_external.png")
+
+    def fake_external_image_get(url, tmp_dir, logger=None):
+        with open(fake_image_path, "wb") as fd:
+            fd.write(b"fake-bytes")
+        return fake_image_path
+
+    monkeypatch.setattr(cli, "external_image_get", fake_external_image_get)
+    rc = run_main(
+        tmp_path,
+        monkeypatch,
+        ["12345", "PROBLEM", "pic\nzbxtg;graphs\nzbxtg;external_image:https://example.com/pic.jpg"],
+    )
+    assert rc == 0
+    zbx = FakeZabbixWeb.instances[-1]
+    assert zbx.login_called is False
+    tg = FakeTelegramAPI.instances[-1]
+    assert tg.sent_photos
+    assert tg.sent_photos[0][2] == fake_image_path
+
+
 def test_main_no_args_returns_zero_and_prints_usage(tmp_path, monkeypatch, capsys):
     monkeypatch.chdir(tmp_path)
     rc = cli.main(["zbxtg.py"])
