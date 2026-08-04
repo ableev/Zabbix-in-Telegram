@@ -46,6 +46,20 @@ def _script_dir(script_path: str) -> str:
     return os.path.dirname(os.path.abspath(script_path))
 
 
+def _split_thread_id(zbx_to: str) -> tuple[str, Optional[int]]:
+    """Split a 'Chat Name:123' or '-100123456:123' recipient into (name, thread id).
+
+    Telegram forum supergroups organize messages into topics/threads; the
+    Bot API addresses a specific topic via `message_thread_id`. Rather than
+    a separate directive, the thread id is appended to TO with a colon, e.g.
+    `zbxtg.py "Supergroup:2" ...` sends into topic 2 of the "Supergroup" chat.
+    """
+    name, sep, thread = zbx_to.rpartition(":")
+    if sep and name and thread.isdigit():
+        return name, int(thread)
+    return zbx_to, None
+
+
 def _split_recipients(settings: directives.RunSettings) -> Dict[str, List[str]]:
     multiple_to: Dict[str, List[str]] = {t: [] for t in TO_TYPES}
     if settings.forked:
@@ -162,10 +176,6 @@ def main(argv: Optional[List[str]] = None) -> int:
         tg.disable_web_page_preview = True
     if "--graph_buttons" in args or settings.graph_buttons:
         tg.image_buttons = True
-    if "--topic-id" in args:
-        settings.topic_id = int(args[args.index("--topic-id") + 1])
-    if "--topic" in args:
-        settings.topic_id = int(args[args.index("--topic") + 1])
     if "--forked" in args:
         settings.forked = True
 
@@ -187,6 +197,10 @@ def main(argv: Optional[List[str]] = None) -> int:
     elif total_recipients > 1:
         _fork_for_recipients(args, multiple_to, logger)
         return 0
+
+    zbx_to, message_thread_id = _split_thread_id(zbx_to)
+    if message_thread_id:
+        tg.message_thread_id = message_thread_id
 
     uid: Optional[str] = None
     if tg.chat_type == "channel":
@@ -219,9 +233,6 @@ def main(argv: Optional[List[str]] = None) -> int:
             text_lines.append(signature_text)
 
     text_lines, used_emoji = apply_emoji_map(text_lines, config.emoji_map)
-
-    if settings.topic_id is not None:
-        tg.message_thread_id = settings.topic_id
 
     if not settings.single_message:
         tg.send_message(uid, text_lines)

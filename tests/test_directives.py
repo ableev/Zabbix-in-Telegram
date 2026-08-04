@@ -56,13 +56,3 @@ def test_features_help_text_lists_all_directives():
     text = directives.features_help_text()
     for key in directives.DIRECTIVES:
         assert key in text
-
-
-def test_parse_message_topic_directive_sets_topic_id():
-    settings, _, _ = directives.parse_message(["zbxtg;topic:12345"])
-    assert settings.topic_id == 12345
-
-
-def test_parse_message_topic_id_directive_sets_topic_id():
-    settings, _, _ = directives.parse_message(["zbxtg;topic_id=67890"])
-    assert settings.topic_id == 67890

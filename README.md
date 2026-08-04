@@ -80,11 +80,6 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
 
   <img src="https://i.imgur.com/TgcCqDf.png" width="400px">
 
-  * Forum topic thread:
-
-    Use a topic ID in a supergroup to send a message into a thread instead of General.
-    Example: `zbxtg;topic:12345`
-
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
@@ -96,12 +91,26 @@ zbxtg;itemid:{ITEM.ID1},{ITEM.ID2},{ITEM.ID3} -- same, but for two or more graph
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- sets the graph's title
 zbxtg;debug -- enables debug mode; some logs and images are saved to the tmp dir
 zbxtg;channel -- sends the message to a channel
-zbxtg;topic:12345 -- sends the message into the specified forum topic thread in a supergroup
 zbxtg;to:username1,username2,username3 -- send to these user(s) directly, without creating dedicated Media types for them
 zbxtg;to_group:Group Name One,Group Name Two -- same, but for groups
 ```
 
 You can use Markdown or HTML formatting in your action: https://core.telegram.org/bots/api#markdown-style + https://core.telegram.org/bots/api#html-style.
+
+#### Sending to a forum topic (subgroup/thread)
+
+If a group is a Telegram forum (topics enabled), append `:<thread id>` to the
+recipient to post into that specific topic instead of "General":
+
+```
+./zbxtg.py "Supergroup:2" "Alerts 1" "Test message in topic #2" --debug --group
+```
+
+Here `Supergroup` is the group name (or its numeric chat ID) and `2` is the
+topic's `message_thread_id` (visible in the topic's link in Telegram, e.g.
+`https://t.me/c/.../2`). This also works with `to`/`to_group` (each
+comma-separated recipient may carry its own `:<thread id>`) and with the
+group's numeric chat ID, e.g. `-1001234567890:2`.
 
 #### Debug
 

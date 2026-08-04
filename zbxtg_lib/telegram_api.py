@@ -84,8 +84,9 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         self._add_parse_mode(params)
-        self._add_message_thread_id(params)
         self.logger.debug("POST sendMessage params=%s", params)
         answer = self.session.post(self._url("sendMessage"), params=params, proxies=self.proxies)
         if answer.status_code == 414:
@@ -105,7 +106,6 @@ class TelegramAPI:
             "disable_notification": self.disable_notification,
         }
         self._add_parse_mode(params)
-        self._add_message_thread_id(params)
         self.logger.debug("POST editMessageText params=%s", params)
         answer = self.session.post(self._url("editMessageText"), params=params, proxies=self.proxies)
         self.result = answer.json()
@@ -133,7 +133,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
-        self._add_message_thread_id(params)
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         with open(path, "rb") as fd:
             files = {"photo": fd}
             self.logger.debug("POST sendPhoto params=%s file=%s", params, path)
@@ -160,7 +161,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
-        self._add_message_thread_id(params)
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         with open(path, "rb") as fd:
             files = {"document": fd}
             self.logger.debug("POST sendDocument params=%s file=%s", params, path)
@@ -178,7 +180,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
-        self._add_message_thread_id(params)
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         self.logger.debug("POST sendLocation params=%s", params)
         answer = self.session.post(self._url("sendLocation"), params=params, proxies=self.proxies)
         self.result = answer.json()
@@ -225,7 +228,3 @@ class TelegramAPI:
     def _add_parse_mode(self, params: dict) -> None:
         if self.markdown or self.html:
             params["parse_mode"] = "Markdown" if self.markdown else "HTML"
-
-    def _add_message_thread_id(self, params: dict) -> None:
-        if self.message_thread_id is not None:
-            params["message_thread_id"] = self.message_thread_id

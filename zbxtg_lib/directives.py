@@ -57,8 +57,6 @@ DIRECTIVES: Dict[str, Directive] = {
     ),
     "to": Directive("to", "str", "override the recipient(s), comma separated", "Custom-to-and-to_group"),
     "to_group": Directive("to_group", "str", "override the recipient group(s), comma separated", "Custom-to-and-to_group"),
-    "topic": Directive("topic_id", "int", "send message to a forum topic thread in a supergroup", "Forum-topic"),
-    "topic_id": Directive("topic_id", "int", "send message to a forum topic thread in a supergroup", "Forum-topic"),
     "forked": Directive("forked", "bool", "internal use only, do not set this", ""),
 }
 
@@ -86,7 +84,6 @@ class RunSettings:
     markdown: bool = False
     html: bool = False
     signature: Optional[str] = None
-    topic_id: Optional[int] = None
     signature_disable: bool = False
     graph_buttons: bool = False
     external_image: Optional[str] = None

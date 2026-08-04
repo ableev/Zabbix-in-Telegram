@@ -11,6 +11,17 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from zbxtg_lib import cli  # noqa: E402
 
 
+def test_split_thread_id_parses_trailing_numeric_suffix():
+    assert cli._split_thread_id("Supergroup:2") == ("Supergroup", 2)
+    assert cli._split_thread_id("-100123456:2") == ("-100123456", 2)
+
+
+def test_split_thread_id_leaves_plain_names_untouched():
+    assert cli._split_thread_id("Supergroup") == ("Supergroup", None)
+    assert cli._split_thread_id("12345") == ("12345", None)
+    assert cli._split_thread_id("some:name") == ("some:name", None)
+
+
 def write_config(tmp_path):
     (tmp_path / "zbxtg_settings.yaml").write_text(
         'telegram:\n  bot_token: "123:ABC"\n'
@@ -111,6 +122,23 @@ def test_main_sends_plain_message(tmp_path, monkeypatch):
     assert "PROBLEM: high load" in lines
 
 
+def test_main_to_with_thread_id_sends_to_topic(tmp_path, monkeypatch):
+    """'ChatId:N' addresses topic N of a forum supergroup (message_thread_id)."""
+    rc = run_main(tmp_path, monkeypatch, ["12345:2", "PROBLEM", "some body text", "--group"])
+    assert rc == 0
+    tg = FakeTelegramAPI.instances[-1]
+    assert tg.message_thread_id == 2
+    chat_id, lines = tg.sent_messages[0]
+    assert chat_id == "12345"
+
+
+def test_main_to_without_thread_id_leaves_message_thread_id_unset(tmp_path, monkeypatch):
+    rc = run_main(tmp_path, monkeypatch, ["12345", "PROBLEM", "some body text"])
+    assert rc == 0
+    tg = FakeTelegramAPI.instances[-1]
+    assert tg.message_thread_id is None
+
+
 def test_main_with_graphs_directive_fetches_and_sends_photo(tmp_path, monkeypatch):
     rc = run_main(
         tmp_path,
@@ -146,13 +174,6 @@ def test_main_external_image_skips_zabbix_login(tmp_path, monkeypatch):
     tg = FakeTelegramAPI.instances[-1]
     assert tg.sent_photos
     assert tg.sent_photos[0][2] == fake_image_path
-
-
-def test_main_topic_directive_sets_message_thread_id(tmp_path, monkeypatch):
-    rc = run_main(tmp_path, monkeypatch, ["12345", "PROBLEM", "test\nzbxtg;topic:12345"])
-    assert rc == 0
-    tg = FakeTelegramAPI.instances[-1]
-    assert tg.message_thread_id == 12345
 
 
 def test_main_no_args_returns_zero_and_prints_usage(tmp_path, monkeypatch, capsys):
