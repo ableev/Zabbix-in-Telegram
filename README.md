@@ -97,6 +97,21 @@ zbxtg;to_group:Group Name One,Group Name Two -- same, but for groups
 
 You can use Markdown or HTML formatting in your action: https://core.telegram.org/bots/api#markdown-style + https://core.telegram.org/bots/api#html-style.
 
+#### Sending to a forum topic (subgroup/thread)
+
+If a group is a Telegram forum (topics enabled), append `:<thread id>` to the
+recipient to post into that specific topic instead of "General":
+
+```
+./zbxtg.py "Supergroup:2" "Alerts 1" "Test message in topic #2" --debug --group
+```
+
+Here `Supergroup` is the group name (or its numeric chat ID) and `2` is the
+topic's `message_thread_id` (visible in the topic's link in Telegram, e.g.
+`https://t.me/c/.../2`). This also works with `to`/`to_group` (each
+comma-separated recipient may carry its own `:<thread id>`) and with the
+group's numeric chat ID, e.g. `-1001234567890:2`.
+
 #### Debug
 
 * Send a message from the command line to test your setup:

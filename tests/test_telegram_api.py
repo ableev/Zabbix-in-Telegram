@@ -111,3 +111,28 @@ def test_find_chat_id_no_match_returns_none():
     payload = {"ok": True, "result": []}
     tg = make_tg(payload)
     assert tg.find_chat_id("nobody") is None
+
+
+def test_send_message_includes_message_thread_id_when_set():
+    tg = make_tg({"ok": True, "result": {"message_id": 1}})
+    tg.message_thread_id = 2
+    tg.send_message("-100123", ["hi"])
+    _, kwargs = tg.session.calls[-1]
+    assert kwargs["params"]["message_thread_id"] == 2
+
+
+def test_send_message_omits_message_thread_id_by_default():
+    tg = make_tg({"ok": True, "result": {"message_id": 1}})
+    tg.send_message("-100123", ["hi"])
+    _, kwargs = tg.session.calls[-1]
+    assert "message_thread_id" not in kwargs["params"]
+
+
+def test_send_photo_includes_message_thread_id_when_set(tmp_path):
+    tg = make_tg({"ok": True, "result": {"message_id": 1}})
+    tg.message_thread_id = 2
+    image_path = tmp_path / "graph.png"
+    image_path.write_bytes(b"fake-png")
+    tg.send_photo("-100123", ["caption"], str(image_path))
+    _, kwargs = tg.session.calls[-1]
+    assert kwargs["params"]["message_thread_id"] == 2

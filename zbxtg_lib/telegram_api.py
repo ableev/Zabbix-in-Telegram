@@ -32,6 +32,7 @@ class TelegramAPI:
         self.disable_web_page_preview = False
         self.disable_notification = False
         self.reply_to_message_id = 0
+        self.message_thread_id: Optional[int] = None
         self.tmp_dir: Optional[str] = None
         self.image_buttons = False
         self.update_offset = 0
@@ -83,6 +84,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         self._add_parse_mode(params)
         self.logger.debug("POST sendMessage params=%s", params)
         answer = self.session.post(self._url("sendMessage"), params=params, proxies=self.proxies)
@@ -130,6 +133,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         with open(path, "rb") as fd:
             files = {"photo": fd}
             self.logger.debug("POST sendPhoto params=%s file=%s", params, path)
@@ -156,6 +161,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         with open(path, "rb") as fd:
             files = {"document": fd}
             self.logger.debug("POST sendDocument params=%s file=%s", params, path)
@@ -173,6 +180,8 @@ class TelegramAPI:
         }
         if self.reply_to_message_id:
             params["reply_to_message_id"] = self.reply_to_message_id
+        if self.message_thread_id:
+            params["message_thread_id"] = self.message_thread_id
         self.logger.debug("POST sendLocation params=%s", params)
         answer = self.session.post(self._url("sendLocation"), params=params, proxies=self.proxies)
         self.result = answer.json()
