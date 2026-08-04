@@ -80,6 +80,11 @@ zbxtg;title:{HOST.HOST} - {TRIGGER.NAME}
 
   <img src="https://i.imgur.com/TgcCqDf.png" width="400px">
 
+  * Forum topic thread:
+
+    Use a topic ID in a supergroup to send a message into a thread instead of General.
+    Example: `zbxtg;topic:12345`
+
 #### Annotations
 ```
 zbxtg;graphs -- enables attached graphs
@@ -91,6 +96,7 @@ zbxtg;itemid:{ITEM.ID1},{ITEM.ID2},{ITEM.ID3} -- same, but for two or more graph
 zbxtg;title:{HOST.HOST} - {TRIGGER.NAME} -- sets the graph's title
 zbxtg;debug -- enables debug mode; some logs and images are saved to the tmp dir
 zbxtg;channel -- sends the message to a channel
+zbxtg;topic:12345 -- sends the message into the specified forum topic thread in a supergroup
 zbxtg;to:username1,username2,username3 -- send to these user(s) directly, without creating dedicated Media types for them
 zbxtg;to_group:Group Name One,Group Name Two -- same, but for groups
 ```

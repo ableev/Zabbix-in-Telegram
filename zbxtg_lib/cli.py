@@ -162,6 +162,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         tg.disable_web_page_preview = True
     if "--graph_buttons" in args or settings.graph_buttons:
         tg.image_buttons = True
+    if "--topic-id" in args:
+        settings.topic_id = int(args[args.index("--topic-id") + 1])
+    if "--topic" in args:
+        settings.topic_id = int(args[args.index("--topic") + 1])
     if "--forked" in args:
         settings.forked = True
 
@@ -215,6 +219,9 @@ def main(argv: Optional[List[str]] = None) -> int:
             text_lines.append(signature_text)
 
     text_lines, used_emoji = apply_emoji_map(text_lines, config.emoji_map)
+
+    if settings.topic_id is not None:
+        tg.message_thread_id = settings.topic_id
 
     if not settings.single_message:
         tg.send_message(uid, text_lines)

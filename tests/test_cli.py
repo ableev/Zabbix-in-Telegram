@@ -30,6 +30,7 @@ class FakeTelegramAPI:
         self.disable_web_page_preview = False
         self.disable_notification = False
         self.reply_to_message_id = 0
+        self.message_thread_id = None
         self.tmp_dir = None
         self.image_buttons = False
         self.proxies = {}
@@ -145,6 +146,13 @@ def test_main_external_image_skips_zabbix_login(tmp_path, monkeypatch):
     tg = FakeTelegramAPI.instances[-1]
     assert tg.sent_photos
     assert tg.sent_photos[0][2] == fake_image_path
+
+
+def test_main_topic_directive_sets_message_thread_id(tmp_path, monkeypatch):
+    rc = run_main(tmp_path, monkeypatch, ["12345", "PROBLEM", "test\nzbxtg;topic:12345"])
+    assert rc == 0
+    tg = FakeTelegramAPI.instances[-1]
+    assert tg.message_thread_id == 12345
 
 
 def test_main_no_args_returns_zero_and_prints_usage(tmp_path, monkeypatch, capsys):

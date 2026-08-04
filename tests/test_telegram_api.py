@@ -111,3 +111,11 @@ def test_find_chat_id_no_match_returns_none():
     payload = {"ok": True, "result": []}
     tg = make_tg(payload)
     assert tg.find_chat_id("nobody") is None
+
+
+def test_send_message_sets_message_thread_id_when_present():
+    tg = make_tg({"ok": True, "result": {"message_id": 1}})
+    tg.message_thread_id = 12345
+    tg.send_message("42", ["hello"])
+    _, kwargs = tg.session.calls[-1]
+    assert kwargs["params"]["message_thread_id"] == 12345
